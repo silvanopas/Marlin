@@ -3118,17 +3118,18 @@
 //#define SPINDLE_FEATURE
 #define LASER_FEATURE
 #if EITHER(SPINDLE_FEATURE, LASER_FEATURE)
-  #define SPINDLE_LASER_ACTIVE_STATE    LOW    // Set to "HIGH" if the on/off function is active HIGH
-  #define SPINDLE_LASER_PWM             true   // Set to "true" if your controller supports setting the speed/power
-  #define SPINDLE_LASER_PWM_INVERT      false  // Set to "true" if the speed/power goes up when you want it to go slower
+  #define SPINDLE_LASER_ACTIVE_STATE      LOW     // Set to "HIGH" if the on/off function is active HIGH
+  #define SPINDLE_LASER_PWM               true    // Set to "true" if your controller supports setting the speed/power
+  #define SPINDLE_LASER_PWM_INVERT        false   // Set to "true" if the speed/power goes up when you want it to go slower
+  #define SPINDLE_LASER_FREQUENCY         2500    // (Hz) Spindle/laser frequency (only on supported HALs: AVR and LPC)
 
-  #define SPINDLE_LASER_FREQUENCY       2500   // (Hz) Spindle/laser frequency (only on supported HALs: AVR and LPC)
-
-  //#define SPINDLE_SERVO         // A servo converting an angle to spindle power
+  //#define SPINDLE_SERVO                         // A servo converting an angle to spindle power
   #ifdef SPINDLE_SERVO
-    #define SPINDLE_SERVO_NR   0  // Index of servo used for spindle control
-    #define SPINDLE_SERVO_MIN 10  // Minimum angle for servo spindle
+    #define SPINDLE_SERVO_NR              0       // Index of servo used for spindle control
+    #define SPINDLE_SERVO_MIN             10      // Minimum angle for servo spindle
   #endif
+
+  #define AIR_EVACUATION                        // Enable vacumm or blower motor control, gcode M10 & M11
 
   /**
    * Speed / Power can be set ('M3 S') and displayed in terms of:
@@ -3156,6 +3157,7 @@
 
     #define SPINDLE_LASER_POWERUP_DELAY   5000 // (ms) Delay to allow the spindle/laser to come up to speed/power
     #define SPINDLE_LASER_POWERDOWN_DELAY 5000 // (ms) Delay to allow the spindle to stop
+    
 
     /**
      * M3/M4 Power Equation
