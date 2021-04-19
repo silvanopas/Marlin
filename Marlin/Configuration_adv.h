@@ -196,7 +196,7 @@
   #define COOLER_MAXTEMP          26  // (°C)
   #define COOLER_DEFAULT_TEMP     16  // (°C)
   #define TEMP_COOLER_HYSTERESIS   1  // (°C) Temperature proximity considered "close enough" to the target
-  #define COOLER_PIN               8  // Laser cooler on/off pin used to control power to the cooling element e.g. TEC, External chiller via relay
+  #define COOLER_PIN               9  // Laser cooler on/off pin used to control power to the cooling element e.g. TEC, External chiller via relay
   #define COOLER_INVERTING     false
   #define TEMP_COOLER_PIN         15  // Laser/Cooler temperature sensor pin. ADC is required.
   #define COOLER_FAN                  // Enable a fan on the cooler, Fan# 0,1,2,3 etc.
@@ -3281,10 +3281,11 @@
 #define COOLANT_CONTROL
 #if ENABLED(COOLANT_CONTROL)
   #define COOLANT_FLOOD_PIN 44
-  //#define COOLANT_MIST                // Enable if mist coolant is present
+  #define COOLANT_MIST_PIN 42
+  #define COOLANT_MIST                // Enable if mist coolant is present
   #define COOLANT_FLOOD               // Enable if flood coolant is present
-  //#define COOLANT_MIST_INVERT  false  // Set "true" if the on/off function is reversed
-  #define COOLANT_FLOOD_INVERT false  // Set "true" if the on/off function is reversed
+  #define COOLANT_MIST_INVERT  true  // Set "true" if the on/off function is reversed
+  #define COOLANT_FLOOD_INVERT true  // Set "true" if the on/off function is reversed
 #endif
 
 /**
