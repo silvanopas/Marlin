@@ -3159,7 +3159,13 @@
   #define SPINDLE_LASER_PWM_INVERT        false   // Set to "true" if the speed/power goes up when you want it to go slower
   #define SPINDLE_LASER_FREQUENCY         2500    // (Hz) Spindle/laser frequency (only on supported HALs: AVR and LPC)
 
-  //#define SPINDLE_SERVO                         // A servo converting an angle to spindle power
+  //#define AIR_EVACUATION                     // Cutter Vacuum / Laser Blower motor control with G-codes M10-M11
+  #if ENABLED(AIR_EVACUATION)
+    #define AIR_EVACUATION_ACTIVE       LOW    // Set to "HIGH" if the on/off function is active HIGH
+    #define AIR_EVACUATION_PIN          42     // Override the default Cutter Vacuum or Laser Blower pin
+  #endif
+
+  //#define SPINDLE_SERVO         // A servo converting an angle to spindle power
   #ifdef SPINDLE_SERVO
     #define SPINDLE_SERVO_NR              0       // Index of servo used for spindle control
     #define SPINDLE_SERVO_MIN             10      // Minimum angle for servo spindle
@@ -3174,7 +3180,7 @@
    *  - RPM     (S0 - S50000)  Best for use with a spindle
    *  - SERVO   (S0 - S180)
    */
-  #define CUTTER_POWER_UNIT PERCENT
+  #define CUTTER_POWER_UNIT PWM255
 
   /**
    * Relative Cutter Power
