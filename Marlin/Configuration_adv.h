@@ -3159,7 +3159,7 @@
   #define SPINDLE_LASER_PWM_INVERT        false   // Set to "true" if the speed/power goes up when you want it to go slower
   #define SPINDLE_LASER_FREQUENCY         2500    // (Hz) Spindle/laser frequency (only on supported HALs: AVR and LPC)
 
-  //#define AIR_EVACUATION                     // Cutter Vacuum / Laser Blower motor control with G-codes M10-M11
+  #define AIR_EVACUATION                     // Cutter Vacuum / Laser Blower motor control with G-codes M10-M11
   #if ENABLED(AIR_EVACUATION)
     #define AIR_EVACUATION_ACTIVE       LOW    // Set to "HIGH" if the on/off function is active HIGH
     #define AIR_EVACUATION_PIN          42     // Override the default Cutter Vacuum or Laser Blower pin
