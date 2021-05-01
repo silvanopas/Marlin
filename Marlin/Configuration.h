@@ -1223,7 +1223,6 @@
 #define Z_HOME_DIR -1
 
 // @section machine
-
 // The size of the print bed
 #define X_BED_SIZE 610
 #define Y_BED_SIZE 410
