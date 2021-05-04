@@ -3168,16 +3168,16 @@
     #define AIR_EVACUATION_PIN          42     // Override the default Cutter Vacuum or Laser Blower pin
   #endif
 
-/**
- * Air Assist Control 
- * M8 and M9 commands to turn air assist on and off.
- * Note: AIR_ASSIST_PIN must also be defined.
- */
-//#define AIR_ASSIST
-#if ENABLED(AIR_ASSIST)
-  #define AIR_ASSIST_ACTIVE     LOW   // Active state on air assist pin
-  #define AIR_ASSIST_PIN        44    // Air assist pin assignment
-#endif
+  /**
+   * Air Assist Control 
+   * M8 and M9 commands to turn air assist on and off.
+   * Note: AIR_ASSIST_PIN must also be defined.
+   */
+  #define AIR_ASSIST
+  #if ENABLED(AIR_ASSIST)
+    #define AIR_ASSIST_ACTIVE     LOW   // Active state on air assist pin
+    #define AIR_ASSIST_PIN        44    // Air assist pin assignment
+  #endif
 
   //#define SPINDLE_SERVO         // A servo converting an angle to spindle power
   #ifdef SPINDLE_SERVO
@@ -3192,7 +3192,7 @@
    *  - RPM     (S0 - S50000)  Best for use with a spindle
    *  - SERVO   (S0 - S180)
    */
-  #define CUTTER_POWER_UNIT PWM255
+  #define CUTTER_POWER_UNIT PERCENT
 
   /**
    * Relative Cutter Power
@@ -3334,10 +3334,8 @@
  *
  * Note: COOLANT_MIST_PIN and/or COOLANT_FLOOD_PIN must also be defined.
  */
-#define COOLANT_CONTROL
+//#define COOLANT_CONTROL
 #if ENABLED(COOLANT_CONTROL)
-  #define COOLANT_FLOOD_PIN 44
-  #define COOLANT_MIST_PIN 42
   #define COOLANT_MIST                // Enable if mist coolant is present
   #define COOLANT_FLOOD               // Enable if flood coolant is present
   #define COOLANT_MIST_INVERT  true  // Set "true" if the on/off function is reversed
