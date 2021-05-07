@@ -212,7 +212,7 @@
 //
 #define LASER_COOLANT_FLOW_METER
 #if ENABLED(LASER_COOLANT_FLOW_METER)
-  #define FLOWMETER_PIN         20  // Requires an external interrupt-enabled pin (e.g., RAMPS 2,3,18,19,20,21)
+  #define FLOWMETER_PIN         19  // Requires an external interrupt-enabled pin (e.g., RAMPS 2,3,18,19,20,21)
   #define FLOWMETER_PPL       5880  // (pulses/liter) Flow meter pulses-per-liter on the input pin
   #define FLOWMETER_INTERVAL  1000  // (ms) Flow rate calculation interval in milliseconds
   #define FLOWMETER_SAFETY          // Prevent running the laser without the minimum flow rate set below
@@ -3162,10 +3162,10 @@
   #define SPINDLE_LASER_PWM_INVERT        false   // Set to "true" if the speed/power goes up when you want it to go slower
   #define SPINDLE_LASER_FREQUENCY         2500    // (Hz) Spindle/laser frequency (only on supported HALs: AVR and LPC)
 
-  #define AIR_EVACUATION                     // Cutter Vacuum / Laser Blower motor control with G-codes M10-M11
+  #define AIR_EVACUATION                          // Cutter Vacuum / Laser Blower motor control with G-codes M10-M11
   #if ENABLED(AIR_EVACUATION)
-    #define AIR_EVACUATION_ACTIVE       LOW    // Set to "HIGH" if the on/off function is active HIGH
-    #define AIR_EVACUATION_PIN          42     // Override the default Cutter Vacuum or Laser Blower pin
+    #define AIR_EVACUATION_ACTIVE         LOW     // Set to "HIGH" if the on/off function is active HIGH
+    #define AIR_EVACUATION_PIN            42      // Override the default Cutter Vacuum or Laser Blower pin
   #endif
 
   /**
@@ -3175,13 +3175,22 @@
    */
   #define AIR_ASSIST
   #if ENABLED(AIR_ASSIST)
-    #define AIR_ASSIST_ACTIVE     LOW   // Active state on air assist pin
-    #define AIR_ASSIST_PIN        44    // Air assist pin assignment
+    #define AIR_ASSIST_ACTIVE             LOW     // Active state on air assist pin
+    #define AIR_ASSIST_PIN                44      // Air assist pin assignment
+  #endif
+
+  //
+  // Laser I2C Ammeter
+  //
+  #define I2C_AMMETER
+  #if ENABLED(I2C_AMMETER)
+    #define I2C_AMMETER_IMAX                1     // Calibration value for the expected current range in Amps
+    #define I2C_AMMETER_SHUNT_RESISTOR   0.11     // Calibration shunt resistor value in ohms
   #endif
 
   //#define SPINDLE_SERVO         // A servo converting an angle to spindle power
   #ifdef SPINDLE_SERVO
-    #define SPINDLE_SERVO_NR              0       // Index of servo used for spindle control
+    #define SPINDLE_SERVO_NR               0      // Index of servo used for spindle control
     #define SPINDLE_SERVO_MIN             10      // Minimum angle for servo spindle
   #endif
 

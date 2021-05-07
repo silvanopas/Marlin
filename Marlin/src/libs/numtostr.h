@@ -65,6 +65,9 @@ const char* i16tostr4signrj(const int16_t x);
 // Convert unsigned float to string with 1.2 format
 const char* ftostr11ns(const_float_t x);
 
+// Convert unsigned float to string with .123 format
+const char* ftostr03ns(const_float_t x);
+
 // Convert unsigned float to string with 1.23 format
 const char* ftostr12ns(const_float_t x);
 
@@ -73,6 +76,9 @@ const char* ftostr31ns(const_float_t x);
 
 // Convert unsigned float to string with 123.4 format
 const char* ftostr41ns(const_float_t x);
+
+// Convert unsigned float to string with 123.4 format
+const char* ftostr3ns(const_float_t x);
 
 // Convert signed float to fixed-length string with 12.34 / _2.34 / -2.34 or -23.45 / 123.45 format
 const char* ftostr42_52(const_float_t x);

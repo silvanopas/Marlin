@@ -186,6 +186,16 @@ const char* ftostr11ns(const_float_t f) {
   return &conv[4];
 }
 
+// Convert unsigned float to string with .123 format
+const char* ftostr03ns(const_float_t f) {
+  const long i = UINTFLOAT(f, 3);
+  conv[3] = '.';
+  conv[4] = DIGIMOD(i, 100);
+  conv[5] = DIGIMOD(i, 10);
+  conv[6] = DIGIMOD(i, 1);
+  return &conv[3];
+}
+
 // Convert unsigned float to string with 1.23 format
 const char* ftostr12ns(const_float_t f) {
   const long i = UINTFLOAT(f, 2);
@@ -217,6 +227,14 @@ const char* ftostr41ns(const_float_t f) {
   return &conv[2];
 }
 
+// Convert unsigned float to string with 123 format
+const char* ftostr3ns(const_float_t f) {
+  const long i = UINTFLOAT(f, 3);
+  conv[4] = DIGIMOD(i, 100);
+  conv[5] = DIGIMOD(i, 10);
+  conv[6] = DIGIMOD(i, 1);
+  return &conv[4];
+}
 // Convert signed float to fixed-length string with 12.34 / _2.34 / -2.34 or -23.45 / 123.45 format
 const char* ftostr42_52(const_float_t f) {
   if (f <= -10 || f >= 100) return ftostr52(f); // -23.45 / 123.45

@@ -57,6 +57,10 @@
   #include "../../feature/cooler.h"
 #endif
 
+#if ENABLED(I2C_AMMETER)
+  #include "../../feature/ammeter.h"
+#endif
+
 #if HAS_POWER_MONITOR
   #include "../../feature/power_monitor.h"
 #endif
@@ -202,6 +206,14 @@ FORCE_INLINE void _draw_centered_temp(const celsius_t temp, const uint8_t tx, co
     const uint8_t len = str[0] != ' ' ? 3 : str[1] != ' ' ? 2 : 1;
     lcd_put_u8str(tx - len * (INFO_FONT_WIDTH) / 2 + 1, ty, &str[3-len]);
     lcd_put_u8str("L");
+  }
+#endif
+
+#if DO_DRAW_AMMETER
+  FORCE_INLINE void _draw_centered_current(const float current, const uint8_t tx, const uint8_t ty) {
+    const char *str = ftostr31ns(current);           
+    const uint8_t len = str[0] != ' ' ? 3 : str[1] != ' ' ? 2 : 1;
+    lcd_put_u8str(tx - len * (INFO_FONT_WIDTH) / 2 + 1, ty, &str[3-len]);
   }
 #endif
 
@@ -402,6 +414,12 @@ FORCE_INLINE void _draw_centered_temp(const celsius_t temp, const uint8_t tx, co
   }
 #endif
 
+#if DO_DRAW_AMMETER
+  FORCE_INLINE void _draw_ammeter_status() {
+    if (PAGE_CONTAINS(28 - INFO_FONT_ASCENT, 28 - 1))
+      _draw_centered_current(ammeter.read(), STATUS_AMMETER_TEXT_X, 28);
+  }
+#endif
 //
 // Before homing, blink '123' <-> '???'.
 // Homed but unknown... '123' <-> '   '.
@@ -675,6 +693,13 @@ void MarlinUI::draw_status_screen() {
         u8g.drawBitmapP(STATUS_FLOWMETER_X, flowmetery, STATUS_FLOWMETER_BYTEWIDTH, flowmeterh, blink && cooler.flowpulses ? status_flowmeter_bmp2 : status_flowmeter_bmp1);
     #endif
 
+    // Laser Ammeter
+    #if DO_DRAW_AMMETER
+      const uint8_t ammetery = STATUS_AMMETER_Y(status_ammeter_bmp_mA),
+                    ammeterh = STATUS_AMMETER_HEIGHT(status_ammeter_bmp_mA);
+       if (PAGE_CONTAINS(ammetery, ammetery + ammeterh - 1))
+        u8g.drawBitmapP(STATUS_AMMETER_X, ammetery, STATUS_AMMETER_BYTEWIDTH, ammeterh, (ammeter.current < .1) ? status_ammeter_bmp_mA : status_ammeter_bmp_A);
+    #endif
 
     // Heated Bed
     TERN_(DO_DRAW_BED, _draw_bed_status(blink));
@@ -687,6 +712,9 @@ void MarlinUI::draw_status_screen() {
 
     // Flowmeter
     TERN_(DO_DRAW_FLOWMETER, _draw_flowmeter_status());
+
+    // Flowmeter
+    TERN_(DO_DRAW_AMMETER, _draw_ammeter_status());
 
     // Fan, if a bitmap was provided
     #if DO_DRAW_FAN
