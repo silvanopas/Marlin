@@ -148,8 +148,8 @@
 
 //
 // Heated Chamber options
-//#if DISABLED(PIDTEMPCHAMBER)
-  #define CHAMBER_CHECK_INTERVAL 5000   // (ms) Interval between checks in bang-bang control
+#if DISABLED(PIDTEMPCHAMBER)
+#define CHAMBER_CHECK_INTERVAL 5000   // (ms) Interval between checks in bang-bang control
   #if ENABLED(CHAMBER_LIMIT_SWITCHING)
     #define CHAMBER_HYSTERESIS 2        // (°C) Only set the relevant heater state when ABS(T-target) > CHAMBER_HYSTERESIS
   #endif
@@ -2904,7 +2904,6 @@
     #define X2_SLEW_RATE                 1
   #endif
 
-  #if AXIS_IS_L64XX(Y)
  #if AXIS_IS_L64XX(Y)
     #define Y_MICROSTEPS               128
     #define Y_OVERCURRENT             2000
@@ -4007,3 +4006,4 @@
  */
 //#define SOFT_RESET_VIA_SERIAL         // 'KILL' and '^X' commands will soft-reset the controller
 //#define SOFT_RESET_ON_KILL            // Use a digital button to soft-reset the controller after KILL
+
