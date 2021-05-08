@@ -3168,30 +3168,25 @@
     #define AIR_EVACUATION_PIN            42      // Override the default Cutter Vacuum or Laser Blower pin
   #endif
 
-  /**
-   * Air Assist Control 
-   * M8 and M9 commands to turn air assist on and off.
-   * Note: AIR_ASSIST_PIN must also be defined.
-   */
-  #define AIR_ASSIST
+  #define AIR_ASSIST                              // Air Assist control with G-codes M8-M9
   #if ENABLED(AIR_ASSIST)
     #define AIR_ASSIST_ACTIVE             LOW     // Active state on air assist pin
-    #define AIR_ASSIST_PIN                44      // Air assist pin assignment
+    #define AIR_ASSIST_PIN                44      // Override the default Air Assist pin
   #endif
 
   //
-  // Laser I2C Ammeter
+  // Laser I2C Ammeter (High precision INA226 low/high side module)
   //
   #define I2C_AMMETER
   #if ENABLED(I2C_AMMETER)
-    #define I2C_AMMETER_IMAX                1     // Calibration value for the expected current range in Amps
-    #define I2C_AMMETER_SHUNT_RESISTOR   0.11     // Calibration shunt resistor value in ohms
+    #define I2C_AMMETER_IMAX              .1       // Calibration value for the expected current range in Amps (use float e.g. 1.0)
+    #define I2C_AMMETER_SHUNT_RESISTOR    .11      // Calibration shunt resistor value in ohms
   #endif
 
-  //#define SPINDLE_SERVO         // A servo converting an angle to spindle power
+  #define SPINDLE_SERVO                            // A servo converting an angle to spindle power
   #ifdef SPINDLE_SERVO
-    #define SPINDLE_SERVO_NR               0      // Index of servo used for spindle control
-    #define SPINDLE_SERVO_MIN             10      // Minimum angle for servo spindle
+    #define SPINDLE_SERVO_NR               0       // Index of servo used for spindle control
+    #define SPINDLE_SERVO_MIN              10      // Minimum angle for servo spindle
   #endif
 
   /**
