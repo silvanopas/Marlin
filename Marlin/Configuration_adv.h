@@ -3183,7 +3183,7 @@
     #define I2C_AMMETER_SHUNT_RESISTOR    .11      // Calibration shunt resistor value in ohms
   #endif
 
-  #define SPINDLE_SERVO                            // A servo converting an angle to spindle power
+  //#define SPINDLE_SERVO                          // A servo converting an angle to spindle power
   #ifdef SPINDLE_SERVO
     #define SPINDLE_SERVO_NR               0       // Index of servo used for spindle control
     #define SPINDLE_SERVO_MIN              10      // Minimum angle for servo spindle
