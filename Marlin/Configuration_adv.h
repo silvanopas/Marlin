@@ -3180,7 +3180,7 @@
   #define I2C_AMMETER
   #if ENABLED(I2C_AMMETER)
     #define I2C_AMMETER_IMAX              .1       // Calibration value for the expected current range in Amps (use float e.g. 1.0)
-    #define I2C_AMMETER_SHUNT_RESISTOR    .11      // Calibration shunt resistor value in ohms
+    #define I2C_AMMETER_SHUNT_RESISTOR    .01      // Calibration shunt resistor value in ohms
   #endif
 
   //#define SPINDLE_SERVO                          // A servo converting an angle to spindle power
