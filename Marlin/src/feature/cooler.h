@@ -81,7 +81,7 @@ public:
       //flowmeter_interrupt_disable();
       //  const uint16_t pulses = flowpulses;
       //flowmeter_interrupt_enable();
-      flowrate = flowpulses * 60.0f * (1000.0f / (FLOWMETER_INTERVAL)) * (1000.0f / (FLOWMETER_PPL));
+      flowrate = (flowpulses / (float)FLOWMETER_PPL) * ((1000.0f / (float)FLOWMETER_INTERVAL) * 60.0f);
       flowpulses = 0;
     }
 
