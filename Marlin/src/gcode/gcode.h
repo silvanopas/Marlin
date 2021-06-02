@@ -556,11 +556,11 @@ private:
     #endif
   #endif
 
-  #if ENABLED(COOLANT_CONTROL)
+  #if EITHER(COOLANT_CONTROL,AIR_ASSIST)
     #if ENABLED(COOLANT_MIST)
       static void M7();
     #endif
-    #if ENABLED(COOLANT_FLOOD)
+    #if EITHER(COOLANT_FLOOD,AIR_ASSIST)
       static void M8();
     #endif
     static void M9();

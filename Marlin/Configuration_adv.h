@@ -300,8 +300,8 @@
   /**
    * Laser cooling watch settings (M143/M193).
    */
-  #define WATCH_COOLER_TEMP_PERIOD            60 // Seconds
-  #define WATCH_COOLER_TEMP_INCREASE           3 // Degrees Celsius
+  #define WATCH_COOLER_TEMP_PERIOD           120 // Seconds
+  #define WATCH_COOLER_TEMP_INCREASE           5 // Degrees Celsius
 #endif
 
 #if ENABLED(PIDTEMP)
@@ -3340,10 +3340,11 @@
  */
 //#define COOLANT_CONTROL
 #if ENABLED(COOLANT_CONTROL)
-  #define COOLANT_MIST                // Enable if mist coolant is present
+  //#define COOLANT_MIST                // Enable if mist coolant is present
   #define COOLANT_FLOOD               // Enable if flood coolant is present
-  #define COOLANT_MIST_INVERT  true  // Set "true" if the on/off function is reversed
-  #define COOLANT_FLOOD_INVERT true  // Set "true" if the on/off function is reversed
+  #define COOLANT_FLOOD_PIN 44
+  //#define COOLANT_MIST_INVERT  true  // Set "true" if the on/off function is reversed
+  //#define COOLANT_FLOOD_INVERT true  // Set "true" if the on/off function is reversed
 #endif
 
 /**
@@ -3848,8 +3849,8 @@
 //#define ESP3D_WIFISUPPORT   // ESP3D Library WiFi management (https://github.com/luc-github/ESP3DLib)
 
 #if EITHER(WIFISUPPORT, ESP3D_WIFISUPPORT)
-  //#define WEBSUPPORT          // Start a webserver (which may include auto-discovery)
-  //#define OTASUPPORT          // Support over-the-air firmware updates
+  #define WEBSUPPORT          // Start a webserver (which may include auto-discovery)
+  #define OTASUPPORT          // Support over-the-air firmware updates
   //#define WIFI_CUSTOM_COMMAND // Accept feature config commands (e.g., WiFi ESP3D) from the host
 
   /**
