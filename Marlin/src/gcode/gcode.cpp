@@ -438,11 +438,11 @@ void GcodeSuite::process_parsed_command(const bool no_ok/*=false*/) {
         #endif
       #endif
 
-      #if ENABLED(COOLANT_CONTROL)
+      #if EITHER(COOLANT_CONTROL,AIR_ASSIST)
         #if ENABLED(COOLANT_MIST)
           case 7: M7(); break;                                    // M7: Mist coolant ON
         #endif
-        #if ENABLED(COOLANT_FLOOD)
+        #if EITHER(COOLANT_CONTROL,AIR_ASSIST)
           case 8: M8(); break;                                    // M8: Flood coolant ON
         #endif
         case 9: M9(); break;                                      // M9: Coolant OFF
