@@ -213,11 +213,11 @@
 #define LASER_COOLANT_FLOW_METER
 #if ENABLED(LASER_COOLANT_FLOW_METER)
   #define FLOWMETER_PIN         19  // Requires an external interrupt-enabled pin (e.g., RAMPS 2,3,18,19,20,21)
-  #define FLOWMETER_PPL       5880  // (pulses/liter) Flow meter pulses-per-liter on the input pin
+  #define FLOWMETER_PPL       1000  // (pulses/liter) Flow meter pulses-per-liter on the input pin
   #define FLOWMETER_INTERVAL  1000  // (ms) Flow rate calculation interval in milliseconds
   #define FLOWMETER_SAFETY          // Prevent running the laser without the minimum flow rate set below
   #if ENABLED(FLOWMETER_SAFETY)
-    #define FLOWMETER_MIN_LITERS_PER_MINUTE 1.5 // (liters/min) Minimum flow required when enabled
+    #define FLOWMETER_MIN_LITERS_PER_MINUTE 1.0 // (liters/min) Minimum flow required when enabled
   #endif
 #endif
 
