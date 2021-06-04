@@ -806,7 +806,7 @@
  * Override with M203
  *                                      X, Y, Z, E0 [, E1[, E2...]]
  */
-#define DEFAULT_MAX_FEEDRATE          { 500, 500, 200, 25 }
+#define DEFAULT_MAX_FEEDRATE          { 1000, 1000, 500, 25 }
 
 //#define LIMITED_MAX_FR_EDITING        // Limit edit via M203 or LCD to DEFAULT_MAX_FEEDRATE * 2
 #if ENABLED(LIMITED_MAX_FR_EDITING)
@@ -1224,8 +1224,8 @@
 
 // @section machine
 // The size of the print bed
-#define X_BED_SIZE 610
-#define Y_BED_SIZE 410
+#define X_BED_SIZE 605
+#define Y_BED_SIZE 405
 
 // Travel limits (mm) after homing, corresponding to endstop positions.
 #define X_MIN_POS 0
