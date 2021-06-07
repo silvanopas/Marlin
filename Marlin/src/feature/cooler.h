@@ -78,9 +78,7 @@ public:
 
     // Get the total flow (in liters per minute) since the last reading
     static void calc_flowrate() {
-      //flowmeter_interrupt_disable();
-      //  const uint16_t pulses = flowpulses;
-      //flowmeter_interrupt_enable();
+      // flowrate = (litres) * (seconds) = litres per minute
       flowrate = (flowpulses / (float)FLOWMETER_PPL) * ((1000.0f / (float)FLOWMETER_INTERVAL) * 60.0f);
       flowpulses = 0;
     }
