@@ -193,9 +193,9 @@
 //
 #if TEMP_SENSOR_COOLER
   #define COOLER_MINTEMP           8  // (°C)
-  #define COOLER_MAXTEMP          26  // (°C)
-  #define COOLER_DEFAULT_TEMP     16  // (°C)
-  #define TEMP_COOLER_HYSTERESIS   1  // (°C) Temperature proximity considered "close enough" to the target
+  #define COOLER_MAXTEMP          30  // (°C)
+  #define COOLER_DEFAULT_TEMP     20  // (°C)
+  #define TEMP_COOLER_HYSTERESIS   2  // (°C) Temperature proximity considered "close enough" to the target
   #define COOLER_PIN               9  // Laser cooler on/off pin used to control power to the cooling element e.g. TEC, External chiller via relay
   #define COOLER_INVERTING     false
   #define TEMP_COOLER_PIN         15  // Laser/Cooler temperature sensor pin. ADC is required.
@@ -294,8 +294,8 @@
  * Thermal Protection parameters for the laser cooler.
  */
 #if ENABLED(THERMAL_PROTECTION_COOLER)
-  #define THERMAL_PROTECTION_COOLER_PERIOD    10 // Seconds
-  #define THERMAL_PROTECTION_COOLER_HYSTERESIS 3 // Degrees Celsius
+  #define THERMAL_PROTECTION_COOLER_PERIOD    60 // Seconds
+  #define THERMAL_PROTECTION_COOLER_HYSTERESIS 4 // Degrees Celsius
 
   /**
    * Laser cooling watch settings (M143/M193).
@@ -556,7 +556,7 @@
 #define EXTRUDER_AUTO_FAN_SPEED 255   // 255 == full speed
 #define CHAMBER_AUTO_FAN_TEMPERATURE 30
 #define CHAMBER_AUTO_FAN_SPEED 255
-#define COOLER_AUTO_FAN_TEMPERATURE 18
+#define COOLER_AUTO_FAN_TEMPERATURE 20
 #define COOLER_AUTO_FAN_SPEED 255
 
 /**
@@ -3386,7 +3386,7 @@
        * can't keep up with the processing demands of LASER_POWER_INLINE_TRAPEZOID_CONT.
        * Disable (or set to 0) to recalculate power on every stepper iteration.
        */
-      //#define LASER_POWER_INLINE_TRAPEZOID_CONT_PER 10
+      #define LASER_POWER_INLINE_TRAPEZOID_CONT_PER 10
 
       /**
        * Include laser power in G0/G1/G2/G3/G5 commands with the 'S' parameter
