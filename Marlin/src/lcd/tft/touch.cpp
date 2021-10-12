@@ -47,7 +47,10 @@ millis_t Touch::last_touch_ms = 0,
          Touch::time_to_hold,
          Touch::repeat_delay,
          Touch::touch_time;
-TouchControlType  Touch::touch_control_type = NONE;
+TouchControlType Touch::touch_control_type = NONE;
+#if HAS_TOUCH_SLEEP
+  millis_t Touch::next_sleep_ms; // = 0
+#endif
 #if HAS_RESUME_CONTINUE
   extern bool wait_for_user;
 #endif
@@ -56,6 +59,7 @@ void Touch::init() {
   TERN_(TOUCH_SCREEN_CALIBRATION, touch_calibration.calibration_reset());
   reset();
   io.Init();
+  TERN_(HAS_TOUCH_SLEEP, wakeUp());
   enable();
 }
 
@@ -93,9 +97,7 @@ void Touch::idle() {
       }
     #endif
 
-    #if LCD_TIMEOUT_TO_STATUS
-      ui.return_to_status_ms = last_touch_ms + LCD_TIMEOUT_TO_STATUS;
-    #endif
+    ui.reset_status_timeout(last_touch_ms);
 
     if (touch_time) {
       #if ENABLED(TOUCH_SCREEN_CALIBRATION)
@@ -257,20 +259,52 @@ void Touch::hold(touch_control_t *control, millis_t delay) {
 }
 
 bool Touch::get_point(int16_t *x, int16_t *y) {
-  #if ENABLED(TOUCH_SCREEN_CALIBRATION)
-    bool is_touched = (touch_calibration.calibration.orientation == TOUCH_PORTRAIT ? io.getRawPoint(y, x) : io.getRawPoint(x, y));
+  #if ENABLED(TFT_TOUCH_DEVICE_XPT2046)
+    #if ENABLED(TOUCH_SCREEN_CALIBRATION)
+      bool is_touched = (touch_calibration.calibration.orientation == TOUCH_PORTRAIT ? io.getRawPoint(y, x) : io.getRawPoint(x, y));
 
-    if (is_touched && touch_calibration.calibration.orientation != TOUCH_ORIENTATION_NONE) {
-      *x = int16_t((int32_t(*x) * touch_calibration.calibration.x) >> 16) + touch_calibration.calibration.offset_x;
-      *y = int16_t((int32_t(*y) * touch_calibration.calibration.y) >> 16) + touch_calibration.calibration.offset_y;
-    }
-  #else
-    bool is_touched = (TOUCH_ORIENTATION == TOUCH_PORTRAIT ? io.getRawPoint(y, x) : io.getRawPoint(x, y));
-    *x = uint16_t((uint32_t(*x) * TOUCH_CALIBRATION_X) >> 16) + TOUCH_OFFSET_X;
-    *y = uint16_t((uint32_t(*y) * TOUCH_CALIBRATION_Y) >> 16) + TOUCH_OFFSET_Y;
+      if (is_touched && touch_calibration.calibration.orientation != TOUCH_ORIENTATION_NONE) {
+        *x = int16_t((int32_t(*x) * touch_calibration.calibration.x) >> 16) + touch_calibration.calibration.offset_x;
+        *y = int16_t((int32_t(*y) * touch_calibration.calibration.y) >> 16) + touch_calibration.calibration.offset_y;
+      }
+    #else
+      bool is_touched = (TOUCH_ORIENTATION == TOUCH_PORTRAIT ? io.getRawPoint(y, x) : io.getRawPoint(x, y));
+      *x = uint16_t((uint32_t(*x) * TOUCH_CALIBRATION_X) >> 16) + TOUCH_OFFSET_X;
+      *y = uint16_t((uint32_t(*y) * TOUCH_CALIBRATION_Y) >> 16) + TOUCH_OFFSET_Y;
+    #endif
+  #elif ENABLED(TFT_TOUCH_DEVICE_GT911)
+    bool is_touched = (TOUCH_ORIENTATION == TOUCH_PORTRAIT ? io.getPoint(y, x) : io.getPoint(x, y));
+  #endif
+  #if HAS_TOUCH_SLEEP
+    if (is_touched)
+      wakeUp();
+    else if (!isSleeping() && ELAPSED(millis(), next_sleep_ms) && ui.on_status_screen())
+      sleepTimeout();
   #endif
   return is_touched;
 }
+
+#if HAS_TOUCH_SLEEP
+
+  void Touch::sleepTimeout() {
+    #if PIN_EXISTS(TFT_BACKLIGHT)
+      OUT_WRITE(TFT_BACKLIGHT_PIN, LOW);
+    #endif
+    next_sleep_ms = TSLP_SLEEPING;
+  }
+  void Touch::wakeUp() {
+    if (isSleeping()) {
+      #if HAS_LCD_BRIGHTNESS
+        ui._set_brightness();
+      #elif PIN_EXISTS(TFT_BACKLIGHT)
+        WRITE(TFT_BACKLIGHT_PIN, HIGH);
+      #endif
+    }
+    next_sleep_ms = millis() + SEC_TO_MS(TOUCH_IDLE_SLEEP);
+  }
+
+#endif // HAS_TOUCH_SLEEP
+
 Touch touch;
 
 bool MarlinUI::touch_pressed() {
