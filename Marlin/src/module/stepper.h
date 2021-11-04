@@ -50,7 +50,7 @@
 #endif
 
 // Disable multiple steps per ISR
-//#define DISABLE_MULTI_STEPPING
+#define DISABLE_MULTI_STEPPING
 
 //
 // Estimate the amount of time the Stepper ISR will take to execute
