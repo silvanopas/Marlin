@@ -29,17 +29,29 @@
 
 void set_pwm_duty(const pin_t pin, const uint16_t v, const uint16_t v_size/*=255*/, const bool invert/*=false*/) {
   if (!PWM_PIN(pin)) return;            // Don't proceed if no hardware timer
-
+  bool needs_freq;
   PinName pin_name = digitalPinToPinName(pin);
   TIM_TypeDef *Instance = (TIM_TypeDef *)pinmap_peripheral(pin_name, PinMap_PWM);
-
+  HardwareTimer *HT;
+  TimerModes_t previousMode;
+  uint32_t index = get_timer_index(Instance);
+  if (HardwareTimer_Handle[index] == NULL) {
+    HardwareTimer_Handle[index]->__this = new HardwareTimer((TIM_TypeDef *)pinmap_peripheral(pin_name, PinMap_PWM));
+    needs_freq = true;
+  }
+  HT = (HardwareTimer *)(HardwareTimer_Handle[index]->__this);
+  uint32_t channel = STM_PIN_CHANNEL(pinmap_function(pin_name, PinMap_PWM));
   uint16_t adj_val = Instance->ARR * v / v_size;
   if (invert) adj_val = Instance->ARR - adj_val;
-  switch (get_pwm_channel(pin_name)) {
-    case TIM_CHANNEL_1: LL_TIM_OC_SetCompareCH1(Instance, adj_val); break;
-    case TIM_CHANNEL_2: LL_TIM_OC_SetCompareCH2(Instance, adj_val); break;
-    case TIM_CHANNEL_3: LL_TIM_OC_SetCompareCH3(Instance, adj_val); break;
-    case TIM_CHANNEL_4: LL_TIM_OC_SetCompareCH4(Instance, adj_val); break;
+
+  previousMode = HT->getMode(channel);
+  if (previousMode != TIMER_OUTPUT_COMPARE_PWM1) {
+    HT->setMode(channel, TIMER_OUTPUT_COMPARE_PWM1, pin);
+  }
+  if (needs_freq) HT->setOverflow(PWM_FREQUENCY, HERTZ_FORMAT);
+  HT->setCaptureCompare(channel, adj_val, RESOLUTION_8B_COMPARE_FORMAT);
+  if (previousMode != TIMER_OUTPUT_COMPARE_PWM1) {
+    HT->resume();
   }
 }
 
