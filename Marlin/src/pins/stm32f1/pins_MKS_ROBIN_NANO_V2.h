@@ -285,11 +285,18 @@
 
   #define TFT_RESET_PIN                     PC6
   #define TFT_BACKLIGHT_PIN                 PD13
+  #define TFT_BACKLIGHT_PWM                 200
 
   #define TOUCH_BUTTONS_HW_SPI
   #define TOUCH_BUTTONS_HW_SPI_DEVICE          1
 
   #define LCD_USE_DMA_SPI
+
+  #if defined(TFT_BACKLIGHT_PWM) 
+    #define HAS_LCD_BRIGHTNESS 1
+    #define DEFAULT_LCD_BRIGHTNESS TFT_BACKLIGHT_PWM
+  #endif
+
 
 #endif
 
