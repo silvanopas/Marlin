@@ -28,19 +28,12 @@
 #include "timers.h"
 
 void set_pwm_duty(const pin_t pin, const uint16_t v, const uint16_t v_size/*=255*/, const bool invert/*=false*/) {
-  if (!PWM_PIN(pin)) return;            // Don't proceed if no hardware timer
-  bool needs_freq;
+   if (!PWM_PIN(pin)) return;            // Don't proceed if no hardware timer
+
   PinName pin_name = digitalPinToPinName(pin);
   TIM_TypeDef *Instance = (TIM_TypeDef *)pinmap_peripheral(pin_name, PinMap_PWM);
-  HardwareTimer *HT;
-  TimerModes_t previousMode;
-  uint32_t index = get_timer_index(Instance);
-  if (HardwareTimer_Handle[index] == NULL) {
-    HardwareTimer_Handle[index]->__this = new HardwareTimer((TIM_TypeDef *)pinmap_peripheral(pin_name, PinMap_PWM));
-    needs_freq = true;
-  }
-  HT = (HardwareTimer *)(HardwareTimer_Handle[index]->__this);
-  uint32_t channel = STM_PIN_CHANNEL(pinmap_function(pin_name, PinMap_PWM));
+  if (!(Instance->CR1 && 1))   // Ensure the timer TIMx_CR1 CEN bit 0 is enabled
+    set_pwm_frequency(pin, PWM_FREQUENCY);
   uint16_t adj_val = Instance->ARR * v / v_size;
   if (invert) adj_val = Instance->ARR - adj_val;
 
@@ -55,21 +48,17 @@ void set_pwm_duty(const pin_t pin, const uint16_t v, const uint16_t v_size/*=255
   }
 }
 
-#if NEEDS_HARDWARE_PWM
+void set_pwm_frequency(const pin_t pin, int f_desired) {
+  if (!PWM_PIN(pin)) return;            // Don't proceed if no hardware timer
 
-  void set_pwm_frequency(const pin_t pin, int f_desired) {
-    if (!PWM_PIN(pin)) return;            // Don't proceed if no hardware timer
+  PinName pin_name = digitalPinToPinName(pin);
+  TIM_TypeDef *Instance = (TIM_TypeDef *)pinmap_peripheral(pin_name, PinMap_PWM); // Get HAL timer instance
 
-    PinName pin_name = digitalPinToPinName(pin);
-    TIM_TypeDef *Instance = (TIM_TypeDef *)pinmap_peripheral(pin_name, PinMap_PWM); // Get HAL timer instance
+  LOOP_S_L_N(i, 0, NUM_HARDWARE_TIMERS) // Protect used timers
+    if (timer_instance[i] && timer_instance[i]->getHandle()->Instance == Instance)
+      return;
 
-    LOOP_S_L_N(i, 0, NUM_HARDWARE_TIMERS) // Protect used timers
-      if (timer_instance[i] && timer_instance[i]->getHandle()->Instance == Instance)
-        return;
-
-    pwm_start(pin_name, f_desired, 0, RESOLUTION_8B_COMPARE_FORMAT);
-  }
-
-#endif
+  pwm_start(pin_name, f_desired, 0, RESOLUTION_8B_COMPARE_FORMAT);
+}
 
 #endif // HAL_STM32
