@@ -42,6 +42,11 @@
 
 #define NUM_HARDWARE_TIMERS 2
 
+#ifdef TIMER_NUM
+  uint16_t timer_freq[TIMER_NUM];
+#endif
+
+
 #ifndef STEP_TIMER_NUM
   #define STEP_TIMER_NUM        0  // Timer Index for Stepper
 #endif
