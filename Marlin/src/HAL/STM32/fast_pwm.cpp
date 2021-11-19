@@ -26,6 +26,7 @@
 
 #include "../../inc/MarlinConfig.h"
 #include "timers.h"
+
 // Array to support sticky frequency sets per timer
 static uint16_t timer_freq[TIMER_NUM] = { NULL };
 
