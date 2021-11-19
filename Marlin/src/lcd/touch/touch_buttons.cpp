@@ -116,7 +116,7 @@ uint8_t TouchButtons::read_buttons() {
 
   void TouchButtons::sleepTimeout() {
     #if PIN_EXISTS(TFT_BACKLIGHT)
-      OUT_WRITE(TFT_BACKLIGHT_PIN, LOW);
+      WRITE(TFT_BACKLIGHT_PIN, LOW);
     #endif
     next_sleep_ms = TSLP_SLEEPING;
   }

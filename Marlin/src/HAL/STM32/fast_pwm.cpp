@@ -26,8 +26,8 @@
 
 #include "../../inc/MarlinConfig.h"
 #include "timers.h"
-
-extern uint16_t timer_freq[];
+// Array to support sticky frequency sets per timer
+static uint16_t timer_freq[TIMER_NUM] = { NULL };
 
 void set_pwm_duty(const pin_t pin, const uint16_t v, const uint16_t v_size/*=255*/, const bool invert/*=false*/) {
   if (!PWM_PIN(pin)) return;            // Don't proceed if no hardware timer
@@ -41,6 +41,7 @@ void set_pwm_duty(const pin_t pin, const uint16_t v, const uint16_t v_size/*=255
   if (invert) value = v_size - value;
 
   uint32_t index = get_timer_index(Instance);
+
   if (HardwareTimer_Handle[index] == NULL) {
     HardwareTimer_Handle[index]->__this = new HardwareTimer((TIM_TypeDef *)pinmap_peripheral(pin_name, PinMap_PWM));
     needs_freq = true;                  // The instance must be new set the default frequency of PWM_FREQUENCY
@@ -55,19 +56,22 @@ void set_pwm_duty(const pin_t pin, const uint16_t v, const uint16_t v_size/*=255
   }
   
   if (needs_freq) {
-    if (timer_freq[index] == 0 ) timer_freq[index] = PWM_FREQUENCY;
-    set_pwm_frequency(pin_name, timer_freq[index]);  
+    if (timer_freq[index] == 0 ) {                    // If the timer is unconfigured and no freq is set then default PWM_FREQUENCY.
+      timer_freq[index] = PWM_FREQUENCY;
+      set_pwm_frequency(pin_name, timer_freq[index]); // Set the frequency and save the value to the assigned index no.
+    }   
   }
-
-  HT->setCaptureCompare(channel, value, RESOLUTION_8B_COMPARE_FORMAT);
-  pinmap_pinout(pin_name, PinMap_PWM); 
+  // Note the resolution is sticky here, the input can be upto 16 bits and that would require RESOLUTION_16B_COMPARE_FORMAT (16)
+  // If such a need were to manifest then we would need to calc the resolution based on the v_size parameter.
+  HT->setCaptureCompare(channel, value, RESOLUTION_8B_COMPARE_FORMAT); // Sets the duty, the calc is done in the library for us :)
+  pinmap_pinout(pin_name, PinMap_PWM);                // Make sure the pin output state is set.
   if (previousMode != TIMER_OUTPUT_COMPARE_PWM1) {
     HT->resume();
   }
 }
 
 void set_pwm_frequency(const pin_t pin, int f_desired) {
-  if (!PWM_PIN(pin)) return;            // Don't proceed if no hardware timer
+  if (!PWM_PIN(pin)) return;                // Don't proceed if no hardware timer
   HardwareTimer *HT;
   PinName pin_name = digitalPinToPinName(pin);
   TIM_TypeDef *Instance = (TIM_TypeDef *)pinmap_peripheral(pin_name, PinMap_PWM); // Get HAL timer instance
@@ -78,9 +82,7 @@ void set_pwm_frequency(const pin_t pin, int f_desired) {
   HardwareTimer_Handle[index]->__this = new HardwareTimer((TIM_TypeDef *)pinmap_peripheral(pin_name, PinMap_PWM));
   HT = (HardwareTimer *)(HardwareTimer_Handle[index]->__this);
   timer_freq[index] = f_desired;
-  HT->setOverflow(f_desired, HERTZ_FORMAT);
-  SERIAL_ECHO_MSG("Timer:", index);
-  SERIAL_ECHO_MSG("Frequency:", timer_freq[index]);
+  HT->setOverflow(f_desired, HERTZ_FORMAT);   
 }
 
 #endif // HAL_STM32
