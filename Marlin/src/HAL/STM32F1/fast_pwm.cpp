@@ -33,8 +33,8 @@ void set_pwm_duty(const pin_t pin, const uint16_t v, const uint16_t v_size/*=255
   if (!PWM_PIN(pin)) return;
     pinMode(pin, PWM);
     uint16_t duty_cycle = v;
-    if (v_size == 255) duty_cycle = duty_cycle * 257; // 257 maps 255 to 65535 (i.e 255*257 = 65535)
     if (invert) duty_cycle = v_size - duty_cycle;
+    if (v_size == 255) duty_cycle = duty_cycle * 257; // 257 maps 255 to 65535 (i.e 255*257 = 65535)
     timer_dev *timer = PIN_MAP[pin].timer_device;
     uint8 channel = PIN_MAP[pin].timer_channel;
     ASSERT(timer && channel);
