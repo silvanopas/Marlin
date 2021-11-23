@@ -51,6 +51,8 @@ typedef uint16_t hal_timer_t;
   #define TEMP_TIMER_CHAN 1 // Channel of the timer to use for compare and interrupts
 #endif
 
+#define TIMER_NUM 14        // Maple only has 14 timer struct pointers
+
 /**
  * Note: Timers may be used by platforms and libraries
  *

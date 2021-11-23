@@ -27,7 +27,7 @@
 #include "HAL.h"
 #include "timers.h"
 
-static uint16_t timer_freq[TIMER_NUM] = { 0 };
+static uint16_t timer_freq[TIMER_NUM];
 
 void set_pwm_duty(const pin_t pin, const uint16_t v, const uint16_t v_size/*=255*/, const bool invert/*=false*/) {
   if (!PWM_PIN(pin)) return;
