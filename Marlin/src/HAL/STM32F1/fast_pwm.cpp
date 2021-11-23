@@ -39,6 +39,14 @@ void set_pwm_duty(const pin_t pin, const uint16_t v, const uint16_t v_size/*=255
     uint8 channel = PIN_MAP[pin].timer_channel;
     ASSERT(timer && channel);
     timer_set_compare(timer, channel, duty_cycle);
+
+  // timer_dev *timer = PIN_MAP[pin].timer_device;
+  // if (!(timer->regs.bas->SR & TIMER_CR1_CEN))   // Ensure the timer is enabled
+  //   set_pwm_frequency(pin, PWM_FREQUENCY);
+  // uint16_t max_val = timer->regs.bas->ARR * v / v_size;
+  // if (invert) max_val = v_size - max_val;
+  // pwmWrite(pin, max_val);
+
 }
 
 void set_pwm_frequency(const pin_t pin, int f_desired) {
