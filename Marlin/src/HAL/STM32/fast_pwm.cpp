@@ -31,7 +31,7 @@
 static uint16_t timer_freq[TIMER_NUM] = { NULL };
 
 void set_pwm_duty(const pin_t pin, const uint16_t v, const uint16_t v_size/*=255*/, const bool invert/*=false*/) {
-  if (!PWM_PIN(pin)) return;            // Don't proceed if no hardware timer
+  if (!PWM_PIN(pin)) return; // Don't proceed if no hardware timer
   bool needs_freq;
   PinName pin_name = digitalPinToPinName(pin);
   TIM_TypeDef *Instance = (TIM_TypeDef *)pinmap_peripheral(pin_name, PinMap_PWM);
@@ -55,34 +55,41 @@ void set_pwm_duty(const pin_t pin, const uint16_t v, const uint16_t v_size/*=255
   if (previousMode != TIMER_OUTPUT_COMPARE_PWM1) {
     HT->setMode(channel, TIMER_OUTPUT_COMPARE_PWM1, pin);
   }
-  
+  set_pwm_frequency(pin_name,2000);
+
   if (needs_freq) {
     if (timer_freq[index] == 0 ) {                    // If the timer is unconfigured and no freq is set then default PWM_FREQUENCY.
       timer_freq[index] = PWM_FREQUENCY;
       set_pwm_frequency(pin_name, timer_freq[index]); // Set the frequency and save the value to the assigned index no.
-    }   
+    }
   }
   // Note the resolution is sticky here, the input can be upto 16 bits and that would require RESOLUTION_16B_COMPARE_FORMAT (16)
-  // If such a need were to manifest then we would need to calc the resolution based on the v_size parameter.
-  HT->setCaptureCompare(channel, value, RESOLUTION_8B_COMPARE_FORMAT); // Sets the duty, the calc is done in the library for us :)
-  pinmap_pinout(pin_name, PinMap_PWM);                // Make sure the pin output state is set.
+  // If such a need were to manifest then we would need to calc the resolution based on the v_size parameter and add code for it.
+  HT->setCaptureCompare(channel, value, RESOLUTION_8B_COMPARE_FORMAT); // Sets the duty, the calc is done in the library :)
+  pinmap_pinout(pin_name, PinMap_PWM); // Make sure the pin output state is set.
   if (previousMode != TIMER_OUTPUT_COMPARE_PWM1) {
     HT->resume();
   }
 }
 
 void set_pwm_frequency(const pin_t pin, int f_desired) {
-  if (!PWM_PIN(pin)) return;                // Don't proceed if no hardware timer
+  if (!PWM_PIN(pin)) return; // Don't proceed if no hardware timer
   HardwareTimer *HT;
   PinName pin_name = digitalPinToPinName(pin);
   TIM_TypeDef *Instance = (TIM_TypeDef *)pinmap_peripheral(pin_name, PinMap_PWM); // Get HAL timer instance
-  
+
   uint32_t index = get_timer_index(Instance);
 
-  if (HardwareTimer_Handle[index] == NULL) 
+  // Protect used timers
+  if (index == TEMP_TIMER_NUM || index == STEP_TIMER_NUM) return;
+  #if PULSE_TIMER_NUM != STEP_TIMER_NUM
+    if (index == PULSE_TIMER_NUM) return;
+  #endif
+
+  if (HardwareTimer_Handle[index] == NULL) // If frequency is set before duty we need to create a handle here. 
   HardwareTimer_Handle[index]->__this = new HardwareTimer((TIM_TypeDef *)pinmap_peripheral(pin_name, PinMap_PWM));
   HT = (HardwareTimer *)(HardwareTimer_Handle[index]->__this);
-  timer_freq[index] = f_desired;
+  timer_freq[index] = f_desired; // Save the last frequency so duty will not set the default for this timer number.
   HT->setOverflow(f_desired, HERTZ_FORMAT);   
 }
 
