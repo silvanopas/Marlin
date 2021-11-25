@@ -27,18 +27,42 @@
 #include "HAL.h"
 #include "timers.h"
 
-static uint16_t timer_freq[TIMER_NUM] = { 0 };
+static uint16_t timer_freq[TIMER_NUM];
 
 void set_pwm_duty(const pin_t pin, const uint16_t v, const uint16_t v_size/*=255*/, const bool invert/*=false*/) {
   if (!PWM_PIN(pin)) return;
-    pinMode(pin, PWM);
-    uint16_t duty_cycle = v;
-    if (v_size == 255) duty_cycle = duty_cycle * 257; // 257 maps 255 to 65535 (i.e 255*257 = 65535)
-    if (invert) duty_cycle = v_size - duty_cycle;
+    pinMode(pin PWM);
     timer_dev *timer = PIN_MAP[pin].timer_device;
     uint8 channel = PIN_MAP[pin].timer_channel;
+    timer_pause(timer);
+    timer_set_mode(timer, channel, TIMER_OUTPUT_COMPARE); // counter
+    timer_set_count(timer, 0);
+
+     // timer_set_prescaler(timer, (uint16_t)(STEPPER_TIMER_PRESCALE - 1));
+     // timer_set_reload(STEP_TIMER_DEV, 0xFFFF);
+     // timer_oc_set_mode(STEP_TIMER_DEV, STEP_TIMER_CHAN, TIMER_OC_MODE_FROZEN, TIMER_OC_NO_PRELOAD); // no output pin change
+     // timer_sbet_compare(STEP_TIMER_DEV, STEP_TIMER_CHAN, _MIN(hal_timer_t(HAL_TIMER_TYPE_MAX), (STEPPER_TIMER_RATE) / frequency));
+     // timer_no_ARR_preload_ARPE(STEP_TIMER_DEV); // Need to be sure no preload on ARR register
+     // timer_attach_interrupt(STEP_TIMER_DEV, STEP_TIMER_CHAN, stepTC_Handler);
+     // timer_set_interrupt_priority(STEP_TIMER_NUM, STEP_TIMER_IRQ_PRIO);
+     // timer_generate_update(STEP_TIMER_DEV);
+      
     ASSERT(timer && channel);
-    timer_set_compare(timer, channel, duty_cycle);
+    if (timer->regs.bas->SR & 1) set_pwm_frequency(pin, 1000);
+    timer_set_reload(timer, 0xFF );
+    timer_set_compare(timer, channel, v);
+    timer_resume(timer);
+    uint8_t timer_i = 0;
+    for (uint8_t i = 0; i < 14; i++) if (timer == get_timer_dev(i)) timer_i = i+1;      
+
+    SERIAL_ECHO_MSG("TIMER_NO: ", timer_i );
+    SERIAL_ECHO_MSG("TIMER_DUTY: ", v );
+    SERIAL_ECHO_MSG("TIMER_CHANNEL: ", channel);
+    SERIAL_ECHO_MSG("TIMER_CR1_ARPE: ", timer->regs.bas->CR1 & 7 );
+    SERIAL_ECHO_MSG("TIMER_ARR: ", timer->regs.bas->ARR );
+    SERIAL_ECHO_MSG("TIMER_PSC: ", timer->regs.bas->PSC );
+    SERIAL_ECHO_MSG("TIMER_CR1_CEN: ", timer->regs.bas->SR & 1 );
+
 }
 
 void set_pwm_frequency(const pin_t pin, int f_desired) {
@@ -48,11 +72,11 @@ void set_pwm_frequency(const pin_t pin, int f_desired) {
   uint8_t channel = PIN_MAP[pin].timer_channel;
 
   // Protect used timers
-  if (timer == get_timer_dev(TEMP_TIMER_NUM)) return;
-  if (timer == get_timer_dev(STEP_TIMER_NUM)) return;
-  #if PULSE_TIMER_NUM != STEP_TIMER_NUM
-    if (timer == get_timer_dev(PULSE_TIMER_NUM)) return;
-  #endif
+  // if (timer == get_timer_dev(TEMP_TIMER_NUM)) return;
+  // if (timer == get_timer_dev(STEP_TIMER_NUM)) return;
+  // #if PULSE_TIMER_NUM != STEP_TIMER_NUM
+  //   if (timer == get_timer_dev(PULSE_TIMER_NUM)) return;
+  // #endif
 
   if (!(timer->regs.bas->SR & TIMER_CR1_CEN))   // Ensure the timer is enabled
     timer_init(timer);

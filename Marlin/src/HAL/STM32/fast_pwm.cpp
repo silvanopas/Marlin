@@ -42,7 +42,7 @@ void set_pwm_duty(const pin_t pin, const uint16_t v, const uint16_t v_size/*=255
   if (invert) value = v_size - value;
 
   uint32_t index = get_timer_index(Instance);
-
+    
   if (HardwareTimer_Handle[index] == NULL) {
     HardwareTimer_Handle[index]->__this = new HardwareTimer((TIM_TypeDef *)pinmap_peripheral(pin_name, PinMap_PWM));
     needs_freq = true;                  // The instance must be new set the default frequency of PWM_FREQUENCY
@@ -55,7 +55,6 @@ void set_pwm_duty(const pin_t pin, const uint16_t v, const uint16_t v_size/*=255
   if (previousMode != TIMER_OUTPUT_COMPARE_PWM1) {
     HT->setMode(channel, TIMER_OUTPUT_COMPARE_PWM1, pin);
   }
-  set_pwm_frequency(pin_name,2000);
 
   if (needs_freq) {
     if (timer_freq[index] == 0 ) {                    // If the timer is unconfigured and no freq is set then default PWM_FREQUENCY.
@@ -90,7 +89,15 @@ void set_pwm_frequency(const pin_t pin, int f_desired) {
   HardwareTimer_Handle[index]->__this = new HardwareTimer((TIM_TypeDef *)pinmap_peripheral(pin_name, PinMap_PWM));
   HT = (HardwareTimer *)(HardwareTimer_Handle[index]->__this);
   timer_freq[index] = f_desired; // Save the last frequency so duty will not set the default for this timer number.
-  HT->setOverflow(f_desired, HERTZ_FORMAT);   
+  HT->setOverflow(f_desired, HERTZ_FORMAT); 
+
+    SERIAL_ECHO_MSG("TIMER_NO: ", index+1 );
+    SERIAL_ECHO_MSG("TIMER_CHANNEL: ", STM_PIN_CHANNEL(pinmap_function(pin_name, PinMap_PWM)));
+    SERIAL_ECHO_MSG("TIMER_CR1_ARPE: ", READ_REG(Instance->CR1 & 7) );
+    SERIAL_ECHO_MSG("TIMER_ARR: ", READ_REG(Instance->ARR) );
+    SERIAL_ECHO_MSG("TIMER_PSC: ", LL_TIM_GetPrescaler(Instance));  
+    SERIAL_ECHO_MSG("TIMER_CR1_CEN: ", READ_REG(Instance->SR & 1) );
+
 }
 
 #endif // HAL_STM32

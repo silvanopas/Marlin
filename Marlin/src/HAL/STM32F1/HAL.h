@@ -264,6 +264,9 @@ void analogWrite(pin_t pin, int pwm_val8); // PWM only! mul by 257 in maple!?
 #define PLATFORM_M997_SUPPORT
 void flashFirmware(const int16_t);
 
+#ifndef PWM_FREQUENCY
+  #define PWM_FREQUENCY 1000
+#endif  
 #define HAL_CAN_SET_PWM_FREQ   // This HAL supports PWM Frequency adjustment
 
 /**
