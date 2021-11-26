@@ -34,7 +34,7 @@ void set_pwm_duty(const pin_t pin, const uint16_t v, const uint16_t v_size/*=255
     uint16_t duty = v;
     if (invert) duty = v_size - duty;
     timer_dev *timer = PIN_MAP[pin].timer_device;
-    if (timer->regs.bas->SR & 1) set_pwm_frequency(pin, PWM_FREQUENCY); // Timer not configured setup default freq.
+    if (!(timer->regs.bas->SR & TIMER_CR1_CEN)) set_pwm_frequency(pin, PWM_FREQUENCY); // Unconfigured? Set default freq.
     uint8_t channel = PIN_MAP[pin].timer_channel;
     timer_pause(timer);
     timer_set_mode(timer, channel, TIMER_PWM); // PWM Output Mode
