@@ -38,7 +38,6 @@ void set_pwm_duty(const pin_t pin, const uint16_t v, const uint16_t v_size/*=255
   HardwareTimer *HT;
   TimerModes_t previousMode;
 
-b
   uint16_t value = v;
   if (invert) value = v_size - value;
 
