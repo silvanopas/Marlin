@@ -31,30 +31,22 @@ static uint16_t timer_freq[TIMER_NUM];
 
 void set_pwm_duty(const pin_t pin, const uint16_t v, const uint16_t v_size/*=255*/, const bool invert/*=false*/) {
   if (!PWM_PIN(pin)) return;
-    pinMode(pin PWM);
+    uint16_t duty = v;
+    if (invert) duty = v_size - duty;
     timer_dev *timer = PIN_MAP[pin].timer_device;
-    uint8 channel = PIN_MAP[pin].timer_channel;
+    if (timer->regs.bas->SR & 1) set_pwm_frequency(pin, PWM_FREQUENCY); // Timer not configured setup default freq.
+    uint8_t channel = PIN_MAP[pin].timer_channel;
     timer_pause(timer);
-    timer_set_mode(timer, channel, TIMER_OUTPUT_COMPARE); // counter
+    timer_set_mode(timer, channel, TIMER_PWM); // PWM Output Mode
     timer_set_count(timer, 0);
-
-     // timer_set_prescaler(timer, (uint16_t)(STEPPER_TIMER_PRESCALE - 1));
-     // timer_set_reload(STEP_TIMER_DEV, 0xFFFF);
-     // timer_oc_set_mode(STEP_TIMER_DEV, STEP_TIMER_CHAN, TIMER_OC_MODE_FROZEN, TIMER_OC_NO_PRELOAD); // no output pin change
-     // timer_sbet_compare(STEP_TIMER_DEV, STEP_TIMER_CHAN, _MIN(hal_timer_t(HAL_TIMER_TYPE_MAX), (STEPPER_TIMER_RATE) / frequency));
-     // timer_no_ARR_preload_ARPE(STEP_TIMER_DEV); // Need to be sure no preload on ARR register
-     // timer_attach_interrupt(STEP_TIMER_DEV, STEP_TIMER_CHAN, stepTC_Handler);
-     // timer_set_interrupt_priority(STEP_TIMER_NUM, STEP_TIMER_IRQ_PRIO);
-     // timer_generate_update(STEP_TIMER_DEV);
-      
-    ASSERT(timer && channel);
-    if (timer->regs.bas->SR & 1) set_pwm_frequency(pin, 1000);
-    timer_set_reload(timer, 0xFF );
-    timer_set_compare(timer, channel, v);
+    timer_set_reload(timer, v_size ); // Set the resolution bits to v_size default is 255              
+    timer_set_compare(timer, channel, duty);
     timer_resume(timer);
+
+
     uint8_t timer_i = 0;
     for (uint8_t i = 0; i < 14; i++) if (timer == get_timer_dev(i)) timer_i = i+1;      
-
+    SERIAL_ECHO_MSG("");
     SERIAL_ECHO_MSG("TIMER_NO: ", timer_i );
     SERIAL_ECHO_MSG("TIMER_DUTY: ", v );
     SERIAL_ECHO_MSG("TIMER_CHANNEL: ", channel);
@@ -71,12 +63,12 @@ void set_pwm_frequency(const pin_t pin, int f_desired) {
   timer_dev *timer = PIN_MAP[pin].timer_device;
   uint8_t channel = PIN_MAP[pin].timer_channel;
 
-  // Protect used timers
-  // if (timer == get_timer_dev(TEMP_TIMER_NUM)) return;
-  // if (timer == get_timer_dev(STEP_TIMER_NUM)) return;
-  // #if PULSE_TIMER_NUM != STEP_TIMER_NUM
-  //   if (timer == get_timer_dev(PULSE_TIMER_NUM)) return;
-  // #endif
+  //Protect used timers
+  if (timer == TEMP_TIMER_DEV) return;
+  if (timer == STEP_TIMER_DEV) return;
+  #if PULSE_TIMER_NUM != STEP_TIMER_NUM
+    if (timer == PULSE_TIMER_DEV) return;
+  #endif
 
   if (!(timer->regs.bas->SR & TIMER_CR1_CEN))   // Ensure the timer is enabled
     timer_init(timer);

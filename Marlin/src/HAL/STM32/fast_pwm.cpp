@@ -38,6 +38,7 @@ void set_pwm_duty(const pin_t pin, const uint16_t v, const uint16_t v_size/*=255
   HardwareTimer *HT;
   TimerModes_t previousMode;
 
+b
   uint16_t value = v;
   if (invert) value = v_size - value;
 
@@ -52,9 +53,7 @@ void set_pwm_duty(const pin_t pin, const uint16_t v, const uint16_t v_size/*=255
   uint32_t channel = STM_PIN_CHANNEL(pinmap_function(pin_name, PinMap_PWM));
   previousMode = HT->getMode(channel);
 
-  if (previousMode != TIMER_OUTPUT_COMPARE_PWM1)
-    HT->setMode(channel, TIMER_OUTPUT_COMPARE_PWM1, pin);
-  }
+  if (previousMode != TIMER_OUTPUT_COMPARE_PWM1) HT->setMode(channel, TIMER_OUTPUT_COMPARE_PWM1, pin);
 
   if (needs_freq) {
     if (timer_freq[index] == 0 ) {                    // If the timer is unconfigured and no freq is set then default PWM_FREQUENCY.
@@ -67,6 +66,19 @@ void set_pwm_duty(const pin_t pin, const uint16_t v, const uint16_t v_size/*=255
   HT->setCaptureCompare(channel, value, RESOLUTION_8B_COMPARE_FORMAT); // Sets the duty, the calc is done in the library :)
   pinmap_pinout(pin_name, PinMap_PWM); // Make sure the pin output state is set.
   if (previousMode != TIMER_OUTPUT_COMPARE_PWM1) HT->resume();
+  
+    #if defined STEP_TIMER_NUM
+      SERIAL_ECHO_MSG("STEP_TIMER_NUM: ", STEP_TIMER_NUM);
+    #endif
+    #if defined TEMP_TIMER_NUM 
+      SERIAL_ECHO_MSG("TEMP_TIMER_NUM: ", TEMP_TIMER_NUM);
+    #endif
+    #if defined STEP_TIMER 
+      SERIAL_ECHO_MSG("STEP_TIMER: ", STEP_TIMER);
+    #endif
+    #if defined TEMP_TIMER 
+      SERIAL_ECHO_MSG("TEMP_TIMER: ", TEMP_TIMER);
+    #endif
 }
 
 void set_pwm_frequency(const pin_t pin, int f_desired) {
