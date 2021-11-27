@@ -55,7 +55,7 @@ void set_pwm_frequency(const pin_t pin, int f_desired) {
   uint8_t channel = PIN_MAP[pin].timer_channel;
   
   uint8_t timer_index = 0;
-  for (uint8_t i = 0; i < 14; i++) if (timer == get_timer_dev(i)) timer_index = i;
+  for (uint8_t i = 0; i < TIMER_NUM; i++) if (timer == get_timer_dev(i)) timer_index = i;
 
   timer_freq[timer_index] = f_desired;
 
