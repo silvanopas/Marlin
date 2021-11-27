@@ -46,8 +46,7 @@ void set_pwm_duty(const pin_t pin, const uint16_t v, const uint16_t v_size/*=255
     timer_pause(timer);
     timer_set_mode(timer, channel, TIMER_PWM); // PWM Output Mode
     timer_set_count(timer, 0);
-    timer_set_reload(timer, v_size ); // Set the resolution bits to v_size default is 255              
-    timer_set_compare(timer, channel, duty);
+    timer_set_compare(timer, channel, duty / timer_freq[timer_index]);
     timer_resume(timer);
 
 
