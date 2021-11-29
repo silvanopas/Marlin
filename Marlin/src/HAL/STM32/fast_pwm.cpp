@@ -65,19 +65,6 @@ void set_pwm_duty(const pin_t pin, const uint16_t v, const uint16_t v_size/*=255
   HT->setCaptureCompare(channel, value, RESOLUTION_8B_COMPARE_FORMAT); // Sets the duty, the calc is done in the library :)
   pinmap_pinout(pin_name, PinMap_PWM); // Make sure the pin output state is set.
   if (previousMode != TIMER_OUTPUT_COMPARE_PWM1) HT->resume();
-  
-    #if defined STEP_TIMER_NUM
-      SERIAL_ECHO_MSG("STEP_TIMER_NUM: ", STEP_TIMER_NUM);
-    #endif
-    #if defined TEMP_TIMER_NUM 
-      SERIAL_ECHO_MSG("TEMP_TIMER_NUM: ", TEMP_TIMER_NUM);
-    #endif
-    #if defined STEP_TIMER 
-      SERIAL_ECHO_MSG("STEP_TIMER: ", STEP_TIMER);
-    #endif
-    #if defined TEMP_TIMER 
-      SERIAL_ECHO_MSG("TEMP_TIMER: ", TEMP_TIMER);
-    #endif
 }
 
 void set_pwm_frequency(const pin_t pin, int f_desired) {
@@ -101,12 +88,12 @@ void set_pwm_frequency(const pin_t pin, int f_desired) {
   timer_freq[index] = f_desired; // Save the last frequency so duty will not set the default for this timer number.
   HT->setOverflow(f_desired, HERTZ_FORMAT); 
 
-    SERIAL_ECHO_MSG("TIMER_NO: ", index+1 );
-    SERIAL_ECHO_MSG("TIMER_CHANNEL: ", STM_PIN_CHANNEL(pinmap_function(pin_name, PinMap_PWM)));
-    SERIAL_ECHO_MSG("TIMER_CR1_ARPE: ", READ_REG(Instance->CR1 & 7) );
-    SERIAL_ECHO_MSG("TIMER_ARR: ", READ_REG(Instance->ARR) );
-    SERIAL_ECHO_MSG("TIMER_PSC: ", LL_TIM_GetPrescaler(Instance));  
-    SERIAL_ECHO_MSG("TIMER_CR1_CEN: ", READ_REG(Instance->SR & 1) );
+    // SERIAL_ECHO_MSG("TIMER_NO: ", index+1 );
+    // SERIAL_ECHO_MSG("TIMER_CHANNEL: ", STM_PIN_CHANNEL(pinmap_function(pin_name, PinMap_PWM)));
+    // SERIAL_ECHO_MSG("TIMER_CR1_ARPE: ", READ_REG(Instance->CR1 & 7) );
+    // SERIAL_ECHO_MSG("TIMER_ARR: ", READ_REG(Instance->ARR) );
+    // SERIAL_ECHO_MSG("TIMER_PSC: ", LL_TIM_GetPrescaler(Instance));  
+    // SERIAL_ECHO_MSG("TIMER_CR1_CEN: ", READ_REG(Instance->SR & 1) );
 
 }
 

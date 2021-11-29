@@ -1949,7 +1949,10 @@ uint32_t Stepper::block_phase_isr() {
       discard_current_block();
     }
     else {
+
       // Step events not completed yet...
+      if (step_events_completed == 1) // Calculate new timer value
+        acceleration_time = calc_timer_interval(current_block->initial_rate, &steps_per_isr);
 
       // Are we in acceleration phase ?
       if (step_events_completed <= accelerate_until) { // Calculate new timer value
