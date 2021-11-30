@@ -807,6 +807,11 @@ void Planner::calculate_trapezoid_for_block(block_t * const block, const_float_t
       cruise_rate = final_speed(initial_rate, accel, accelerate_steps);y
     #endif
   }
+
+ SERIAL_ECHO_MSG("block->step_event_count:",block->step_event_count);
+ SERIAL_ECHO_MSG("accelerate_steps:",accelerate_steps);
+ SERIAL_ECHO_MSG("decelerate_steps:",decelerate_steps);
+
   #if ENABLED(S_CURVE_ACCELERATION)
     else // We have some plateau time, so the cruise rate will be the nominal rate
       cruise_rate = block->nominal_rate;
