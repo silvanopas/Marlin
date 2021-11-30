@@ -54,11 +54,11 @@ void set_pwm_frequency(const pin_t pin, int f_desired) {
 
   timer_freq[timer_index] = f_desired;
   
-  //Protect used timers
-  if (timer == TEMP_TIMER_DEV) return;
-  if (timer == STEP_TIMER_DEV) return;
-  #if PULSE_TIMER_NUM != STEP_TIMER_NUM
-    if (timer == PULSE_TIMER_DEV) return;
+  // Protect used timers
+  if (timer == HAL_get_timer_dev(MF_TIMER_TEMP)) return;
+  if (timer == HAL_get_timer_dev(MF_TIMER_STEP)) return;
+  #if MF_TIMER_PULSE != MF_TIMER_STEP
+    if (timer == HAL_get_timer_dev(MF_TIMER_PULSE)) return;
   #endif
 
   if (!(timer->regs.bas->SR & TIMER_CR1_CEN))   // Ensure the timer is enabled
