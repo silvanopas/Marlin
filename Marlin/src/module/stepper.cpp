@@ -1949,13 +1949,13 @@ uint32_t Stepper::block_phase_isr() {
       discard_current_block();
     }
     else {
-
       // Step events not completed yet...
-      if (step_events_completed == 1) // Calculate new timer value
+
+      if (step_events_completed == 1) // Calculate initial_rate interval timer value
         acceleration_time = calc_timer_interval(current_block->initial_rate, &steps_per_isr);
 
       // Are we in acceleration phase ?
-      if (step_events_completed <= accelerate_until) { // Calculate new timer value
+      if (step_events_completed < accelerate_until) { // Calculate new timer value
 
         #if ENABLED(S_CURVE_ACCELERATION)
           // Get the next speed to use (Jerk limited!)
@@ -1963,7 +1963,7 @@ uint32_t Stepper::block_phase_isr() {
                                    ? _eval_bezier_curve(acceleration_time)
                                    : current_block->cruise_rate;
         #else
-          acc_step_rate = STEP_MULTIPLY(acceleration_time, current_block->acceleration_rate) + current_block->initial_rate;
+          acc_step_rate = STEP_MULTIPLY(acceleration_time, current_block->acceleration_rate);
           NOMORE(acc_step_rate, current_block->nominal_rate);
         #endif
 
@@ -2009,10 +2009,11 @@ uint32_t Stepper::block_phase_isr() {
             #endif
           }
         #endif
+        deceleration_time = acceleration_time;
       }
       // Are we in Deceleration phase ?
-      else if (step_events_completed > decelerate_after) {
-        uint32_t step_rate;
+      else if (step_events_completed >= decelerate_after) {
+        uint32_t dec_step_rate;
 
         #if ENABLED(S_CURVE_ACCELERATION)
           // If this is the 1st time we process the 2nd half of the trapezoid...
@@ -2021,31 +2022,31 @@ uint32_t Stepper::block_phase_isr() {
             _calc_bezier_curve_coeffs(current_block->cruise_rate, current_block->final_rate, current_block->deceleration_time_inverse);
             bezier_2nd_half = true;
             // The first point starts at cruise rate. Just save evaluation of the Bézier curve
-            step_rate = current_block->cruise_rate;
+            dec_step_rate = current_block->cruise_rate;
           }
           else {
             // Calculate the next speed to use
-            step_rate = deceleration_time < current_block->deceleration_time
+            dec_step_rate = deceleration_time < current_block->deceleration_time
               ? _eval_bezier_curve(deceleration_time)
               : current_block->final_rate;
           }
         #else
 
           // Using the old trapezoidal control
-          step_rate = STEP_MULTIPLY(deceleration_time, current_block->acceleration_rate);
-          if (step_rate < acc_step_rate) { // Still decelerating?
-            step_rate = acc_step_rate - step_rate;
-            NOLESS(step_rate, current_block->final_rate);
-          }
-          else
-            step_rate = current_block->final_rate;
+          dec_step_rate = STEP_MULTIPLY(deceleration_time, current_block->acceleration_rate);
+          // if (dec_step_rate < current_block->final_rate) { // Still decelerating?
+          //   dec_step_rate = acc_step_rate - dec_step_rate;
+          NOLESS(dec_step_rate, current_block->final_rate);
+          // }
+          //else
+          //  dec_step_rate = current_block->final_rate;
         #endif
 
-        // step_rate is in steps/second
+        // dec_step_rate is in steps/second
 
-        // step_rate to timer interval and steps per stepper isr
-        interval = calc_timer_interval(step_rate, &steps_per_isr);
-        deceleration_time += interval;
+        // dec_step_rate to timer interval and steps per stepper isr
+        interval = calc_timer_interval(dec_step_rate, &steps_per_isr);
+        deceleration_time -= interval;
 
         #if ENABLED(LIN_ADVANCE)
           if (LA_use_advance_lead) {
@@ -2080,7 +2081,7 @@ uint32_t Stepper::block_phase_isr() {
                 laser_trap.till_update--;
               else {
                 laser_trap.till_update = LASER_POWER_INLINE_TRAPEZOID_CONT_PER;
-                laser_trap.cur_power = (current_block->laser.power * step_rate) / current_block->nominal_rate;
+                laser_trap.cur_power = (current_block->laser.power * dec_step_rate) / current_block->nominal_rate;
                 cutter.ocr_set_power(laser_trap.cur_power); // Cycle efficiency isn't relevant when the last line was many cycles
               }
             #endif
@@ -2098,11 +2099,12 @@ uint32_t Stepper::block_phase_isr() {
         // Calculate the ticks_nominal for this nominal speed, if not done yet
         if (ticks_nominal < 0) {
           // step_rate to timer interval and loops for the nominal speed
-          ticks_nominal = calc_timer_interval(current_block->nominal_rate, &steps_per_isr);
+          //ticks_nominal = calc_timer_interval(current_block->nominal_rate, &steps_per_isr);
+          interval = calc_timer_interval(current_block->nominal_rate, &steps_per_isr);
         }
 
         // The timer interval is just the nominal value for the nominal speed
-        interval = ticks_nominal;
+        //interval = ticks_nominal;
 
         // Update laser - Cruising
         #if ENABLED(LASER_POWER_INLINE_TRAPEZOID)
