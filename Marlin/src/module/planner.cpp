@@ -799,6 +799,7 @@ void Planner::calculate_trapezoid_for_block(block_t * const block, const_float_t
   if (plateau_steps < 0) {
     const float accelerate_steps_float = CEIL(intersection_distance(initial_rate, final_rate, accel, block->step_event_count));
     accelerate_steps = _MIN(uint32_t(_MAX(accelerate_steps_float, 0)), block->step_event_count);
+    decelerate_steps = block->step_event_count - accelerate_steps;
     plateau_steps = 0;
 
     #if ENABLED(S_CURVE_ACCELERATION)
@@ -806,6 +807,7 @@ void Planner::calculate_trapezoid_for_block(block_t * const block, const_float_t
       cruise_rate = final_speed(initial_rate, accel, accelerate_steps);
     #endif
   }
+
   #if ENABLED(S_CURVE_ACCELERATION)
     else // We have some plateau time, so the cruise rate will be the nominal rate
       cruise_rate = block->nominal_rate;
@@ -822,7 +824,7 @@ void Planner::calculate_trapezoid_for_block(block_t * const block, const_float_t
 
   // Store new block parameters
   block->accelerate_until = accelerate_steps;
-  block->decelerate_after = accelerate_steps + plateau_steps;
+  block->decelerate_after =  block->step_event_count - decelerate_steps;
   block->initial_rate = initial_rate;
   #if ENABLED(S_CURVE_ACCELERATION)
     block->acceleration_time = acceleration_time;
