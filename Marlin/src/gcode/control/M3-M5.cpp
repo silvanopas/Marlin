@@ -72,6 +72,7 @@
  *  PWM duty cycle goes from 0 (off) to 255 (always on).
  */
 void GcodeSuite::M3_M4(const bool is_M4) {
+
   if (cutter.cutter_mode == CUTTER_MODE_STANDARD)
     planner.synchronize();   // Wait for previous movement commands (G0/G1/G2/G3) to complete before changing power
 
@@ -82,7 +83,7 @@ void GcodeSuite::M3_M4(const bool is_M4) {
       cutter.set_enabled(true);
     }
   #endif
-
+  
   auto get_s_power = [] {
     if (parser.seen('S')) {
       #if ENABLED(LASER_POWER_TRAP)

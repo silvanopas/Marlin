@@ -48,6 +48,8 @@ enum CutterMode : int8_t {
   CUTTER_MODE_DYNAMIC       // M4 laser power is proportional to the feed rate, set with 'M4 I', cleared with 'M5 I'.
 };
 
+// #define _MAP(N,S1,S2,D1,D2) ((N)*_MAX((D2)-(D1),0)/_MAX((S2)-(S1),1)+(D1))
+
 class SpindleLaser {
 public:
   static const inline uint8_t pct_to_ocr(const_float_t pct) { return uint8_t(PCT_TO_PWM(pct)); }
@@ -193,6 +195,7 @@ public:
       }
       return upwr;
     }
+
   #endif // SPINDLE_LASER_USE_PWM
 
   // Enable laser/spindle output.
