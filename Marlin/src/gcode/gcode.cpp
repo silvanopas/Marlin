@@ -231,7 +231,7 @@ void GcodeSuite::get_destination_from_command() {
           #else
             cutter.unitPower = cutter.power_to_range(parser.value_float());
           #endif
-          cutter.inline_power(cutter.upower_to_ocr(cutter.unitPower));
+          cutter.inline_power(TERN(SPINDLE_LASER_USE_PWM, cutter.upower_to_ocr(cutter.unitPower), cutter.unitPower > 0 ? 255 : 0));
           cutter.menuPower = cutter.unitPower;
         }
       }

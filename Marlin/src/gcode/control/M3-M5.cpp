@@ -122,7 +122,7 @@ void GcodeSuite::M3_M4(const bool is_M4) {
     #if ENABLED(SPINDLE_SERVO)
       cutter.apply_power(cutter.unitPower);
     #else
-      cutter.apply_power(cutter.upower_to_ocr(cutter.unitPower));
+      cutter.apply_power(TERN(SPINDLE_LASER_USE_PWM, cutter.upower_to_ocr(cutter.unitPower), cutter.unitPower > 0 ? 255 : 0));
     #endif
     TERN_(SPINDLE_CHANGE_DIR, cutter.set_reverse(is_M4));
   }

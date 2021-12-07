@@ -152,7 +152,7 @@ void SpindleLaser::apply_power(const uint8_t opwr) {
       WRITE(SPINDLE_LASER_ENA_PIN, 0 ? SPINDLE_LASER_ACTIVE_STATE : !SPINDLE_LASER_ACTIVE_STATE);
     #endif
     isReadyForUI = false;
-    ocr_off();
+    TERN_(SPINDLE_LASER_USE_PWM, ocr_off());
   }
 }
 

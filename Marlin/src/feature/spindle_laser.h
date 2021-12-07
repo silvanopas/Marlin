@@ -155,7 +155,7 @@ public:
         #endif
       );
     }
-
+    #endif // SPINDLE_LASER_USE_PWM
     /**
      * Correct power to configured range
      */
@@ -195,8 +195,6 @@ public:
       }
       return upwr;
     }
-
-  #endif // SPINDLE_LASER_USE_PWM
 
   // Enable laser/spindle output.
   // If we are in standard mode and no power was spec'd set it to the startup value.
