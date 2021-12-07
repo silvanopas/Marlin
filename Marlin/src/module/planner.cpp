@@ -800,6 +800,7 @@ void Planner::calculate_trapezoid_for_block(block_t * const block, const_float_t
   if (plateau_steps < 0) {
     const float accelerate_steps_float = CEIL(intersection_distance(initial_rate, final_rate, accel, block->step_event_count));
     accelerate_steps = _MIN(uint32_t(_MAX(accelerate_steps_float, 0)), block->step_event_count);
+    decelerate_steps = block->step_event_count - accelerate_steps;
     plateau_steps = 0;
 
     #if ENABLED(S_CURVE_ACCELERATION)
@@ -823,7 +824,7 @@ void Planner::calculate_trapezoid_for_block(block_t * const block, const_float_t
 
   // Store new block parameters
   block->accelerate_until = accelerate_steps;
-  block->decelerate_after = decelerate_steps + plateau_steps;
+  block->decelerate_after = block->step_event_count - decelerate_steps;
   block->initial_rate = initial_rate;
   #if ENABLED(S_CURVE_ACCELERATION)
     block->acceleration_time = acceleration_time;
@@ -862,6 +863,7 @@ void Planner::calculate_trapezoid_for_block(block_t * const block, const_float_t
           SERIAL_ECHO_MSG("p.incr:",block->laser.trap_ramp_entry_incr);
           SERIAL_ECHO_MSG("p.decr:",block->laser.trap_ramp_exit_decr);
         #endif
+
       } else {
         block->laser.trap_ramp_active_pwr = 0;
         block->laser.trap_ramp_entry_incr = 0;
