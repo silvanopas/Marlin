@@ -364,6 +364,7 @@ class Stepper {
     #endif
 
     static uint32_t acceleration_time, deceleration_time; // time measured in Stepper Timer ticks
+    static uint32_t last_acceleration_step_rate_change; // Interval added in the last acceleration interval, used to compute initial deceleration rate.
     static uint8_t steps_per_isr;         // Count of steps to perform per Stepper ISR call
 
     #if ENABLED(ADAPTIVE_STEP_SMOOTHING)

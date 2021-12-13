@@ -227,7 +227,9 @@ typedef struct block_t {
   uint32_t nominal_rate,                    // The nominal step rate for this block in step_events/sec
            initial_rate,                    // The jerk-adjusted step rate at start of block
            final_rate,                      // The minimal rate at exit
-           acceleration_steps_per_s2;       // acceleration steps/sec^2
+           acceleration_steps_per_s2,       // acceleration steps/sec^2
+           first_accel_rate,                // The rate to use between the first and second steps
+           first_decel_rate_reduction;      // The amount by which to reduce the rate on the first deceleration step
 
   #if ENABLED(DIRECT_STEPPING)
     page_idx_t page_idx;                    // Page index used for direct stepping

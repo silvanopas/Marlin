@@ -834,6 +834,9 @@ void Planner::calculate_trapezoid_for_block(block_t * const block, const_float_t
     block->cruise_rate = cruise_rate;
   #endif
   block->final_rate = final_rate;
+  block->first_accel_rate = FLOOR(SQRT(2 * block->acceleration_steps_per_s2 + sq(block->initial_rate)));
+  block->first_decel_rate_reduction = CEIL(SQRT(2 * block->acceleration_steps_per_s2 + sq(block->nominal_rate)) - block->nominal_rate); // TODO: cruise_rate isn't adjusted to match actual speed in "no cruise" case
+
 
   /**
    * Laser trapezoid calculations

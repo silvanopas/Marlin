@@ -186,7 +186,7 @@ bool Stepper::abort_current_block;
   ;
 #endif
 
-uint32_t Stepper::acceleration_time, Stepper::deceleration_time;
+uint32_t Stepper::acceleration_time, Stepper::deceleration_time, Stepper::last_acceleration_step_rate_change;
 uint8_t Stepper::steps_per_isr;
 
 #if HAS_FREEZE_PIN
@@ -252,6 +252,20 @@ int32_t Stepper::ticks_nominal = -1;
 xyz_long_t Stepper::endstops_trigsteps;
 xyze_long_t Stepper::count_position{0};
 xyze_int8_t Stepper::count_direction{0};
+
+#if ENABLED(LASER_POWER_INLINE_TRAPEZOID)
+  Stepper::stepper_laser_t Stepper::laser_trap = {
+    .enabled = false,
+    .cur_power = 0,
+    .cruise_set = false,
+    #if DISABLED(LASER_POWER_INLINE_TRAPEZOID_CONT)
+      .last_step_count = 0,
+      .acc_step_count = 0
+    #else
+      .till_update = 0
+    #endif
+  };
+#endif
 
 #define MINDIR(A) (count_direction[_AXIS(A)] < 0)
 #define MAXDIR(A) (count_direction[_AXIS(A)] > 0)
@@ -1911,6 +1925,7 @@ uint32_t Stepper::block_phase_isr() {
 
   // If there is a current block
   if (current_block) {
+
     // If current block is finished, reset pointer and finalize state
     if (step_events_completed >= step_event_count) {
       #if ENABLED(DIRECT_STEPPING)
@@ -1933,7 +1948,7 @@ uint32_t Stepper::block_phase_isr() {
       TERN_(HAS_FILAMENT_RUNOUT_DISTANCE, runout.block_completed(current_block));
       discard_current_block();
     }
-    else {     
+    else {
       // Step events not completed yet...
 
       // Are we in acceleration phase ?
@@ -1945,8 +1960,9 @@ uint32_t Stepper::block_phase_isr() {
                                    ? _eval_bezier_curve(acceleration_time)
                                    : current_block->cruise_rate;
         #else
-          acc_step_rate = STEP_MULTIPLY(acceleration_time, current_block->acceleration_rate) + current_block->initial_rate;
-          NOMORE(acc_step_rate, current_block->nominal_rate);
+          uint32_t new_acc_step_rate = STEP_MULTIPLY(acceleration_time, current_block->acceleration_rate) + current_block->first_accel_rate;
+          last_acceleration_step_rate_change = new_acc_step_rate - acc_step_rate;
+          acc_step_rate = _MIN(new_acc_step_rate, current_block->nominal_rate);
         #endif
 
         // acc_step_rate is in steps/second
@@ -1978,7 +1994,7 @@ uint32_t Stepper::block_phase_isr() {
         #endif
       }
       // Are we in Deceleration phase ?
-      else if (step_events_completed > decelerate_after) {
+      else if (step_events_completed >= decelerate_after) {
         uint32_t step_rate;
 
         #if ENABLED(S_CURVE_ACCELERATION)
@@ -1999,13 +2015,15 @@ uint32_t Stepper::block_phase_isr() {
         #else
 
           // Using the old trapezoidal control
-          step_rate = STEP_MULTIPLY(deceleration_time, current_block->acceleration_rate);
-          if (step_rate < acc_step_rate) { // Still decelerating?
-            step_rate = acc_step_rate - step_rate;
+          uint32_t step_rate_reduction = STEP_MULTIPLY(deceleration_time, current_block->acceleration_rate) + last_acceleration_step_rate_change;
+
+          if (step_rate_reduction < acc_step_rate) { // Still decelerating?
+            step_rate = acc_step_rate - step_rate_reduction;
             NOLESS(step_rate, current_block->final_rate);
           }
-          else
+          else {
             step_rate = current_block->final_rate;
+          }
         #endif
 
         // step_rate is in steps/second
