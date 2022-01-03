@@ -67,6 +67,10 @@
   #include "../gcode/gcode.h"
 #endif
 
+#if ENABLED(NOZZLE_PARK_FEATURE)
+  #include "../libs/nozzle.h"
+#endif
+
 // MAX TC related macros
 #define TEMP_SENSOR_IS_MAX(n, M) (ENABLED(TEMP_SENSOR_##n##_IS_MAX##M) || (ENABLED(TEMP_SENSOR_REDUNDANT_IS_MAX##M) && REDUNDANT_TEMP_MATCH(SOURCE, E##n)))
 #define TEMP_SENSOR_IS_ANY_MAX_TC(n) (ENABLED(TEMP_SENSOR_##n##_IS_MAX_TC) || (ENABLED(TEMP_SENSOR_REDUNDANT_IS_MAX_TC) && REDUNDANT_TEMP_MATCH(SOURCE, E##n)))
@@ -192,6 +196,7 @@
 Temperature thermalManager;
 
 PGMSTR(str_t_thermal_runaway, STR_T_THERMAL_RUNAWAY);
+PGMSTR(str_t_temp_malfunction, STR_T_MALFUNCTION);
 PGMSTR(str_t_heating_failed, STR_T_HEATING_FAILED);
 
 /**
@@ -861,7 +866,9 @@ int16_t Temperature::getHeaterPower(const heater_id_t heater_id) {
     #define INIT_CHAMBER_AUTO_FAN_PIN(P) SET_OUTPUT(P)
   #endif
 
-  #define CHAMBER_FAN_INDEX HOTENDS
+  #ifndef CHAMBER_FAN_INDEX
+    #define CHAMBER_FAN_INDEX HOTENDS
+  #endif
 
   void Temperature::update_autofans() {
     #define _EFAN(B,A) _EFANOVERLAP(A,B) ? B :
@@ -932,7 +939,7 @@ int16_t Temperature::getHeaterPower(const heater_id_t heater_id) {
       #if BOTH(HAS_FANCHECK, HAS_PWMFANCHECK)
         #define _AUTOFAN_SPEED() fan_check.is_measuring() ? 255 : EXTRUDER_AUTO_FAN_SPEED
       #else
-        #define _AUTOFAN_SPEED() 255
+        #define _AUTOFAN_SPEED() EXTRUDER_AUTO_FAN_SPEED
       #endif
       #define _AUTOFAN_CASE(N) case N: _UPDATE_AUTO_FAN(E##N, fan_on, _AUTOFAN_SPEED()); break
 
@@ -977,8 +984,8 @@ int16_t Temperature::getHeaterPower(const heater_id_t heater_id) {
 
 inline void loud_kill(FSTR_P const lcd_msg, const heater_id_t heater_id) {
   marlin_state = MF_KILLED;
+  thermalManager.disable_all_heaters();
   #if USE_BEEPER
-    thermalManager.disable_all_heaters();
     for (uint8_t i = 20; i--;) {
       WRITE(BEEPER_PIN, HIGH);
       delay(25);
@@ -990,6 +997,12 @@ inline void loud_kill(FSTR_P const lcd_msg, const heater_id_t heater_id) {
       watchdog_refresh();
     }
     WRITE(BEEPER_PIN, HIGH);
+  #endif
+  #if ENABLED(NOZZLE_PARK_FEATURE)
+    if (!homing_needed_error()) {
+      nozzle.park(0);
+      planner.synchronize();
+    }
   #endif
   kill(lcd_msg, HEATER_FSTR(heater_id));
 }
@@ -1341,6 +1354,8 @@ void Temperature::manage_heater() {
       if (degRedundant() > TEMP_SENSOR_REDUNDANT_MAX_TC_TMAX - 1.0) max_temp_error(H_REDUNDANT);
       if (degRedundant() < TEMP_SENSOR_REDUNDANT_MAX_TC_TMIN + .01) min_temp_error(H_REDUNDANT);
     #endif
+  #else
+    #warning "Safety Alert! Disable IGNORE_THERMOCOUPLE_ERRORS for the final build!"
   #endif
 
   millis_t ms = millis();
@@ -1430,7 +1445,7 @@ void Temperature::manage_heater() {
 
       TERN_(HEATER_IDLE_HANDLER, heater_idle[IDLE_INDEX_BED].update(ms));
 
-      #if HAS_THERMALLY_PROTECTED_BED
+      #if ENABLED(THERMAL_PROTECTION_BED)
         tr_state_machine[RUNAWAY_IND_BED].run(temp_bed.celsius, temp_bed.target, H_BED, THERMAL_PROTECTION_BED_PERIOD, THERMAL_PROTECTION_BED_HYSTERESIS);
       #endif
 
@@ -2191,11 +2206,8 @@ void Temperature::init() {
     #elif TEMP_SENSOR_IS_MAX(0, 31865)
       max31865_0.begin(
         MAX31865_WIRES(MAX31865_SENSOR_WIRES_0) // MAX31865_2WIRE, MAX31865_3WIRE, MAX31865_4WIRE
-        OPTARG(LIB_INTERNAL_MAX31865, MAX31865_SENSOR_OHMS_0, MAX31865_CALIBRATION_OHMS_0)
+        OPTARG(LIB_INTERNAL_MAX31865, MAX31865_SENSOR_OHMS_0, MAX31865_CALIBRATION_OHMS_0, MAX31865_WIRE_OHMS_0)
       );
-      #if defined(LIB_INTERNAL_MAX31865) && ENABLED(MAX31865_50HZ_FILTER)
-        max31865_0.enable50HzFilter(1);
-      #endif
     #endif
 
     #if TEMP_SENSOR_IS_MAX(1, 6675) && HAS_MAX6675_LIBRARY
@@ -2205,11 +2217,8 @@ void Temperature::init() {
     #elif TEMP_SENSOR_IS_MAX(1, 31865)
       max31865_1.begin(
         MAX31865_WIRES(MAX31865_SENSOR_WIRES_1) // MAX31865_2WIRE, MAX31865_3WIRE, MAX31865_4WIRE
-        OPTARG(LIB_INTERNAL_MAX31865, MAX31865_SENSOR_OHMS_1, MAX31865_CALIBRATION_OHMS_1)
+        OPTARG(LIB_INTERNAL_MAX31865, MAX31865_SENSOR_OHMS_1, MAX31865_CALIBRATION_OHMS_1, MAX31865_WIRE_OHMS_1)
       );
-      #if defined(LIB_INTERNAL_MAX31865) && ENABLED(MAX31865_50HZ_FILTER)
-        max31865_1.enable50HzFilter(1);
-      #endif
     #endif
     #undef MAX31865_WIRES
     #undef _MAX31865_WIRES
@@ -2563,19 +2572,29 @@ void Temperature::init() {
       );
     */
 
-    #if HEATER_IDLE_HANDLER
+    #if ENABLED(THERMAL_PROTECTION_VARIANCE_MONITOR)
+      if (state == TRMalfunction) { // temperature invariance may continue, regardless of heater state
+        variance += ABS(current - last_temp); // no need for detection window now, a single change in variance is enough
+        last_temp = current;
+        if (!NEAR_ZERO(variance)) {
+          variance_timer = millis() + SEC_TO_MS(period_seconds);
+          variance = 0.0;
+          state = TRStable; // resume from where we detected the problem
+        }
+      }
+    #endif
+
+    if (TERN1(THERMAL_PROTECTION_VARIANCE_MONITOR, state != TRMalfunction)) {
       // If the heater idle timeout expires, restart
-      if (heater_idle[idle_index].timed_out) {
+      if (TERN0(HEATER_IDLE_HANDLER, heater_idle[idle_index].timed_out)) {
         state = TRInactive;
         running_temp = 0;
+        TERN_(THERMAL_PROTECTION_VARIANCE_MONITOR, variance_timer = 0);
       }
-      else
-    #endif
-    {
-      // If the target temperature changes, restart
-      if (running_temp != target) {
+      else if (running_temp != target) { // If the target temperature changes, restart
         running_temp = target;
         state = target > 0 ? TRFirstHeating : TRInactive;
+        TERN_(THERMAL_PROTECTION_VARIANCE_MONITOR, variance_timer = 0);
       }
     }
 
@@ -2589,7 +2608,7 @@ void Temperature::init() {
         state = TRStable;
 
       // While the temperature is stable watch for a bad temperature
-      case TRStable:
+      case TRStable: {
 
         #if ENABLED(ADAPTIVE_FAN_SLOWING)
           if (adaptive_fan_slowing && heater_id >= 0) {
@@ -2607,16 +2626,42 @@ void Temperature::init() {
           }
         #endif
 
+        const millis_t now = millis();
+
+        #if ENABLED(THERMAL_PROTECTION_VARIANCE_MONITOR)
+          if (PENDING(now, variance_timer)) {
+            variance += ABS(current - last_temp);
+            last_temp = current;
+          }
+          else {
+            if (NEAR_ZERO(variance) && variance_timer) { // valid variance monitoring window
+              state = TRMalfunction;
+              break;
+            }
+            variance_timer = now + SEC_TO_MS(period_seconds);
+            variance = 0.0;
+            last_temp = current;
+          }
+        #endif
+
         if (current >= running_temp - hysteresis_degc) {
-          timer = millis() + SEC_TO_MS(period_seconds);
+          timer = now + SEC_TO_MS(period_seconds);
           break;
         }
-        else if (PENDING(millis(), timer)) break;
+        else if (PENDING(now, timer)) break;
         state = TRRunaway;
+
+      } // fall through
 
       case TRRunaway:
         TERN_(HAS_DWIN_E3V2_BASIC, DWIN_Popup_Temperature(0));
         _temp_error(heater_id, FPSTR(str_t_thermal_runaway), GET_TEXT_F(MSG_THERMAL_RUNAWAY));
+
+      #if ENABLED(THERMAL_PROTECTION_VARIANCE_MONITOR)
+        case TRMalfunction:
+          TERN_(HAS_DWIN_E3V2_BASIC, DWIN_Popup_Temperature(0));
+          _temp_error(heater_id, FPSTR(str_t_temp_malfunction), GET_TEXT_F(MSG_TEMP_MALFUNCTION));
+      #endif
     }
   }
 

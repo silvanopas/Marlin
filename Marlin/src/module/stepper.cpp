@@ -421,15 +421,15 @@ xyze_int8_t Stepper::count_direction{0};
   #define Z_APPLY_STEP(v,Q) Z_STEP_WRITE(v)
 #endif
 
-#if LINEAR_AXES >= 4
+#if HAS_I_AXIS
   #define I_APPLY_DIR(v,Q) I_DIR_WRITE(v)
   #define I_APPLY_STEP(v,Q) I_STEP_WRITE(v)
 #endif
-#if LINEAR_AXES >= 5
+#if HAS_J_AXIS
   #define J_APPLY_DIR(v,Q) J_DIR_WRITE(v)
   #define J_APPLY_STEP(v,Q) J_STEP_WRITE(v)
 #endif
-#if LINEAR_AXES >= 6
+#if HAS_K_AXIS
   #define K_APPLY_DIR(v,Q) K_DIR_WRITE(v)
   #define K_APPLY_STEP(v,Q) K_STEP_WRITE(v)
 #endif
@@ -1366,7 +1366,7 @@ void Stepper::set_directions() {
     }
 
     FORCE_INLINE int32_t Stepper::_eval_bezier_curve(const uint32_t curr_step) {
-      #if defined(__arm__) || defined(__thumb__)
+      #if (defined(__arm__) || defined(__thumb__)) && !defined(STM32G0B1xx) // TODO: Test define STM32G0xx versus STM32G0B1xx
 
         // For ARM Cortex M3/M4 CPUs, we have the optimized assembler version, that takes 43 cycles to execute
         uint32_t flo = 0;
@@ -1674,7 +1674,7 @@ void Stepper::pulse_phase_isr() {
     const bool is_page = IS_PAGE(current_block);
 
     #if ENABLED(DIRECT_STEPPING)
-      // TODO (DerAndere): Add support for LINEAR_AXES >= 4
+      // TODO (DerAndere): Add support for HAS_I_AXIS
       if (is_page) {
 
         #if STEPPER_PAGE_FORMAT == SP_4x4D_128
@@ -1914,7 +1914,7 @@ uint32_t Stepper::block_phase_isr() {
     // If current block is finished, reset pointer and finalize state
     if (step_events_completed >= step_event_count) {
       #if ENABLED(DIRECT_STEPPING)
-        // TODO (DerAndere): Add support for LINEAR_AXES >= 4
+        // TODO (DerAndere): Add support for HAS_I_AXIS
         #if STEPPER_PAGE_FORMAT == SP_4x4D_128
           #define PAGE_SEGMENT_UPDATE_POS(AXIS) \
             count_position[_AXIS(AXIS)] += page_step_state.bd[_AXIS(AXIS)] - 128 * 7;
@@ -3146,13 +3146,13 @@ void Stepper::report_positions() {
 
       } break;
 
-      #if LINEAR_AXES >= 4
+      #if HAS_I_AXIS
         case I_AXIS: BABYSTEP_AXIS(I, 0, direction); break;
       #endif
-      #if LINEAR_AXES >= 5
+      #if HAS_J_AXIS
         case J_AXIS: BABYSTEP_AXIS(J, 0, direction); break;
       #endif
-      #if LINEAR_AXES >= 6
+      #if HAS_K_AXIS
         case K_AXIS: BABYSTEP_AXIS(K, 0, direction); break;
       #endif
 

@@ -118,7 +118,7 @@ public:
   static void init();
 
   #if ENABLED(MARLIN_DEV_MODE)
-    static inline void refresh_frequency() { set_pwm_frequency(pin_t(SPINDLE_LASER_PWM_PIN), frequency); }
+    static void refresh_frequency() { set_pwm_frequency(pin_t(SPINDLE_LASER_PWM_PIN), frequency); }
   #endif
 
   // Modifying this function should update everywhere
@@ -142,7 +142,7 @@ public:
     /**
      * Update output for power->OCR translation
      */
-    static inline uint8_t upower_to_ocr(const cutter_power_t upwr) {
+    static uint8_t upower_to_ocr(const cutter_power_t upwr) {
       return uint8_t(
         #if CUTTER_UNIT_IS(PWM255)
           upwr 
@@ -157,7 +157,7 @@ public:
     /**
      * Correct power to configured range
      */
-    static inline cutter_power_t power_to_range(const cutter_power_t pwr) {
+    static cutter_power_t power_to_range(const cutter_power_t pwr) {
       return power_to_range(pwr, _CUTTER_POWER(CUTTER_POWER_UNIT));
     }
 
@@ -193,6 +193,7 @@ public:
       }
       return upwr;
     }
+
   #endif // SPINDLE_LASER_USE_PWM
 
   // Enable laser/spindle output.
@@ -232,7 +233,7 @@ public:
     static void set_reverse(const bool reverse);
     static bool is_reverse() { return READ(SPINDLE_DIR_PIN) == SPINDLE_INVERT_DIR; }
   #else
-    static inline void set_reverse(const bool) {}
+    static void set_reverse(const bool) {}
     static bool is_reverse() { return false; }
   #endif
 
@@ -240,7 +241,7 @@ public:
     static void air_evac_enable();         // Turn On Cutter Vacuum or Laser Blower motor
     static void air_evac_disable();        // Turn Off Cutter Vacuum or Laser Blower motor
     static void air_evac_toggle();         // Toggle Cutter Vacuum or Laser Blower motor
-    static inline bool air_evac_state() {  // Get current state
+    static bool air_evac_state() {  // Get current state
       return (READ(AIR_EVACUATION_PIN) == AIR_EVACUATION_ACTIVE);
     }
   #endif
@@ -249,7 +250,7 @@ public:
     static void air_assist_enable();         // Turn on air assist
     static void air_assist_disable();        // Turn off air assist
     static void air_assist_toggle();         // Toggle air assist
-    static inline bool air_assist_state() {  // Get current state
+    static bool air_assist_state() {  // Get current state
       return (READ(AIR_ASSIST_PIN) == AIR_ASSIST_ACTIVE);
     }
   #endif
@@ -300,7 +301,7 @@ public:
        * Also fires with any PWM power that was previous set
        * If not set defaults to 80% power
        */
-      static inline void test_fire_pulse() {
+      static void test_fire_pulse() {
         TERN_(USE_BEEPER, buzzer.tone(30, 3000));
         cutter_mode = CUTTER_MODE_STANDARD;// Menu needs standard mode.
         laser_menu_toggle(true);           // Laser On

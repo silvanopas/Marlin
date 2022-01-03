@@ -1261,8 +1261,6 @@ void Planner::recalculate() {
 
     #if ENABLED(FAN_SOFT_PWM)
       #define _FAN_SET(F) thermalManager.soft_pwm_amount_fan[F] = CALC_FAN_SPEED(F);
-    #elif ENABLED(FAST_PWM_FAN)
-      #define _FAN_SET(F) set_pwm_duty(FAN##F##_PIN, CALC_FAN_SPEED(F));
     #else
       #define _FAN_SET(F) set_pwm_duty(pin_t(FAN##F##_PIN), CALC_FAN_SPEED(F));
     #endif
@@ -1309,7 +1307,7 @@ void Planner::check_axes_activity() {
   #endif
 
   #if HAS_TAIL_FAN_SPEED
-    static uint8_t tail_fan_speed[FAN_COUNT];
+    static uint8_t tail_fan_speed[FAN_COUNT] = ARRAY_N_1(FAN_COUNT, 255);
     bool fans_need_update = false;
   #endif
 
@@ -1866,13 +1864,13 @@ bool Planner::_populate_block(block_t * const block, bool split_move,
       " A:", target.a, " (", da, " steps)"
       " B:", target.b, " (", db, " steps)"
       " C:", target.c, " (", dc, " steps)"
-      #if LINEAR_AXES >= 4
+      #if HAS_I_AXIS
         " " AXIS4_STR ":", target.i, " (", di, " steps)"
       #endif
-      #if LINEAR_AXES >= 5
+      #if HAS_J_AXIS
         " " AXIS5_STR ":", target.j, " (", dj, " steps)"
       #endif
-      #if LINEAR_AXES >= 6
+      #if HAS_K_AXIS
         " " AXIS6_STR ":", target.k, " (", dk, " steps)"
       #endif
       #if HAS_EXTRUDERS
@@ -1939,13 +1937,13 @@ bool Planner::_populate_block(block_t * const block, bool split_move,
       if (db + dc < 0) SBI(dm, B_AXIS);           // Motor B direction
       if (CORESIGN(db - dc) < 0) SBI(dm, C_AXIS); // Motor C direction
     #endif
-    #if LINEAR_AXES >= 4
+    #if HAS_I_AXIS
       if (di < 0) SBI(dm, I_AXIS);
     #endif
-    #if LINEAR_AXES >= 5
+    #if HAS_J_AXIS
       if (dj < 0) SBI(dm, J_AXIS);
     #endif
-    #if LINEAR_AXES >= 6
+    #if HAS_K_AXIS
       if (dk < 0) SBI(dm, K_AXIS);
     #endif
   #elif ENABLED(MARKFORGED_XY)
@@ -2050,13 +2048,13 @@ bool Planner::_populate_block(block_t * const block, bool split_move,
       steps_dist_mm.b      = (db + dc) * mm_per_step[B_AXIS];
       steps_dist_mm.c      = CORESIGN(db - dc) * mm_per_step[C_AXIS];
     #endif
-    #if LINEAR_AXES >= 4
+    #if HAS_I_AXIS
       steps_dist_mm.i = di * mm_per_step[I_AXIS];
     #endif
-    #if LINEAR_AXES >= 5
+    #if HAS_J_AXIS
       steps_dist_mm.j = dj * mm_per_step[J_AXIS];
     #endif
-    #if LINEAR_AXES >= 6
+    #if HAS_K_AXIS
       steps_dist_mm.k = dk * mm_per_step[K_AXIS];
     #endif
   #elif ENABLED(MARKFORGED_XY)
@@ -2113,7 +2111,7 @@ bool Planner::_populate_block(block_t * const block, bool split_move,
           )
         #elif ENABLED(FOAMCUTTER_XYUV)
           // Return the largest distance move from either X/Y or I/J plane
-          #if LINEAR_AXES >= 5
+          #if HAS_J_AXIS
             _MAX(sq(steps_dist_mm.x) + sq(steps_dist_mm.y), sq(steps_dist_mm.i) + sq(steps_dist_mm.j))
           #else
             sq(steps_dist_mm.x) + sq(steps_dist_mm.y)
@@ -2205,13 +2203,13 @@ bool Planner::_populate_block(block_t * const block, bool split_move,
     );
   #endif
   #if ANY(CORE_IS_XY, MARKFORGED_XY, MARKFORGED_YX)
-    #if LINEAR_AXES >= 4
+    #if HAS_I_AXIS
       if (block->steps.i) stepper.enable_axis(I_AXIS);
     #endif
-    #if LINEAR_AXES >= 5
+    #if HAS_J_AXIS
       if (block->steps.j) stepper.enable_axis(J_AXIS);
     #endif
-    #if LINEAR_AXES >= 6
+    #if HAS_K_AXIS
       if (block->steps.k) stepper.enable_axis(K_AXIS);
     #endif
   #endif
@@ -2964,17 +2962,17 @@ bool Planner::buffer_segment(const abce_pos_t &abce
       SERIAL_ECHOPGM(" (", position.z, "->", target.z);
       SERIAL_CHAR(')');
     #endif
-    #if LINEAR_AXES >= 4
+    #if HAS_I_AXIS
       SERIAL_ECHOPGM_P(SP_I_LBL, abce.i);
       SERIAL_ECHOPGM(" (", position.i, "->", target.i);
       SERIAL_CHAR(')');
     #endif
-    #if LINEAR_AXES >= 5
+    #if HAS_J_AXIS
       SERIAL_ECHOPGM_P(SP_J_LBL, abce.j);
       SERIAL_ECHOPGM(" (", position.j, "->", target.j);
       SERIAL_CHAR(')');
     #endif
-    #if LINEAR_AXES >= 6
+    #if HAS_K_AXIS
       SERIAL_ECHOPGM_P(SP_K_LBL, abce.k);
       SERIAL_ECHOPGM(" (", position.k, "->", target.k);
       SERIAL_CHAR(')');
