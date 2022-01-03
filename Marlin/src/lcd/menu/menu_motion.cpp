@@ -47,6 +47,7 @@
 #if HAS_LEVELING
   #include "../../module/planner.h"
   #include "../../feature/bedlevel/bedlevel.h"
+  #include "menu_hpabl.h"
 #endif
 
 #if ENABLED(MANUAL_E_MOVES_RELATIVE)
@@ -434,6 +435,10 @@ void menu_motion() {
   //
   // Level Bed
   //
+  #if ENABLED(HPABL)
+    SUBMENU(MSG_BED_LEVELING, MarlinHPABL::enter_hpabl);
+  #endif
+
   #if ENABLED(AUTO_BED_LEVELING_UBL)
 
     SUBMENU(MSG_UBL_LEVEL_BED, _lcd_ubl_level_bed);
