@@ -418,7 +418,17 @@ FORCE_INLINE void _draw_centered_temp(const celsius_t temp, const uint8_t tx, co
       _draw_centered_current(ammeter.read(), STATUS_AMMETER_TEXT_X, 28);
   }
 #endif
+<<<<<<< HEAD
 
+=======
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/laser.gcode.inline.fix
+>>>>>>> d583996fd45cc72b6a435f8e786842262fbf9f39
+>>>>>>> eb034f9423b64feae94333835d95e6e1819771ba
 //
 // Before homing, blink '123' <-> '???'.
 // Homed but unknown... '123' <-> '   '.
