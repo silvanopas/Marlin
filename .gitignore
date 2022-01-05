@@ -22,12 +22,15 @@
 # Generated files
 _Version.h
 bdf2u8g
+marlin_config.json
+mczip.h
+*.gen
 
 #
 # OS
 #
 applet/
-*.DS_Store
+.DS_Store
 
 #
 # Misc
@@ -143,7 +146,12 @@ vc-fileutils.settings
 .vscode/launch.json
 .vscode/*.db
 
-# cmake
+#Simulation
+imgui.ini
+eeprom.dat
+spi_flash.bin
+
+#cmake
 CMakeLists.txt
 src/CMakeLists.txt
 CMakeListsPrivate.txt
@@ -163,7 +171,3 @@ __pycache__
 
 # IOLogger logs
 *_log.csv
-
-# Simulation / Native
-eeprom.dat
-imgui.ini

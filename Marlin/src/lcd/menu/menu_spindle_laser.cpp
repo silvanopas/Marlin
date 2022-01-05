@@ -33,7 +33,7 @@
   #include "../../feature/spindle_laser.h"
 
   void menu_spindle_laser() {
-    bool is_enabled = cutter.enabled() && cutter.isReady;
+    bool is_enabled = cutter.enabled();
     #if ENABLED(SPINDLE_CHANGE_DIR)
       bool is_rev = cutter.is_reverse();
     #endif
@@ -41,7 +41,7 @@
     START_MENU();
     BACK_ITEM(MSG_MAIN);
 
-    #if ENABLED(SPINDLE_LASER_PWM)
+    #if ENABLED(SPINDLE_LASER_USE_PWM)
       // Change the cutter's "current power" value without turning the cutter on or off
       // Power is displayed and set in units and range according to CUTTER_POWER_UNIT
       EDIT_ITEM_FAST(CUTTER_MENU_POWER_TYPE, MSG_CUTTER(POWER), &cutter.menuPower,
@@ -49,7 +49,11 @@
     #endif
 
     editable.state = is_enabled;
-    EDIT_ITEM(bool, MSG_CUTTER(TOGGLE), &is_enabled, []{ if (editable.state) cutter.disable(); else cutter.enable_same_dir(); });
+    #if ENABLED(SPINDLE_FEATURE)
+      EDIT_ITEM(bool, MSG_CUTTER(TOGGLE), &is_enabled, []{ if (editable.state) cutter.disable(); else cutter.enable_same_dir(); });
+    #else
+      EDIT_ITEM(bool, MSG_CUTTER(TOGGLE), &is_enabled, []{cutter.laser_menu_toggle(!editable.state); });
+    #endif
 
     #if ENABLED(AIR_EVACUATION)
       bool evac_state = cutter.air_evac_state();

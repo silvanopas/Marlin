@@ -69,7 +69,7 @@ void BedMeshViewScreen::onEntry() {
 void BedMeshViewScreen::drawHighlightedPointValue() {
   CommandProcessor cmd;
   cmd.font(Theme::font_medium)
-     .colors(normal_btn)
+     .cmd(COLOR_RGB(bg_text_enabled))
      .text(Z_LABEL_POS, GET_TEXT_F(MSG_MESH_EDIT_Z))
      .font(font_small);
 
@@ -132,7 +132,6 @@ void BedMeshViewScreen::onMeshUpdate(const int8_t x, const int8_t y, const ExtUI
       mydata.count = GRID_MAX_POINTS;
       break;
     case ExtUI::G26_START:
-      GOTO_SCREEN(BedMeshViewScreen);
       mydata.message = nullptr;
       mydata.count = 0;
       break;
@@ -155,17 +154,11 @@ void BedMeshViewScreen::onMeshUpdate(const int8_t x, const int8_t y, const ExtUI
 void BedMeshViewScreen::doProbe() {
   GOTO_SCREEN(BedMeshViewScreen);
   mydata.count = 0;
-  injectCommands_P(PSTR(BED_LEVELING_COMMANDS));
-}
-
-void BedMeshViewScreen::doMeshValidation() {
-  mydata.count = 0;
-  GOTO_SCREEN(StatusScreen);
-  injectCommands_P(PSTR("G28 O\nM117 Heating...\nG26 R X0 Y0"));
+  injectCommands(F(BED_LEVELING_COMMANDS));
 }
 
 void BedMeshViewScreen::show() {
-  injectCommands_P(PSTR("G29 L1"));
+  injectCommands(F("G29 L1"));
   GOTO_SCREEN(BedMeshViewScreen);
 }
 
