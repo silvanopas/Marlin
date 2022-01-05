@@ -418,6 +418,7 @@ FORCE_INLINE void _draw_centered_temp(const celsius_t temp, const uint8_t tx, co
       _draw_centered_current(ammeter.read(), STATUS_AMMETER_TEXT_X, 28);
   }
 #endif
+
 //
 // Before homing, blink '123' <-> '???'.
 // Homed but unknown... '123' <-> '   '.

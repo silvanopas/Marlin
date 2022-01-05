@@ -3439,15 +3439,6 @@
     #define AIR_ASSIST_PIN                44      // Override the default Air Assist pin
   #endif
 
-  //
-  // Laser I2C Ammeter (High precision INA226 low/high side module)
-  //
-  #define I2C_AMMETER
-  #if ENABLED(I2C_AMMETER)
-    #define I2C_AMMETER_IMAX              .1       // Calibration value for the expected current range in Amps (use float e.g. 1.0)
-    #define I2C_AMMETER_SHUNT_RESISTOR    .1       // Calibration shunt resistor value in ohms
-  #endif
-
   //#define SPINDLE_SERVO                          // A servo converting an angle to spindle power
   #ifdef SPINDLE_SERVO
     #define SPINDLE_SERVO_NR               0       // Index of servo used for spindle control
@@ -3554,7 +3545,7 @@
     //
     // Laser I2C Ammeter (High precision INA226 low/high side module)
     //
-    //#define I2C_AMMETER
+    #define I2C_AMMETER
     #if ENABLED(I2C_AMMETER)
       #define I2C_AMMETER_IMAX            0.1    // (Amps) Calibration value for the expected current range
       #define I2C_AMMETER_SHUNT_RESISTOR  0.1    // (Ohms) Calibration shunt resistor value

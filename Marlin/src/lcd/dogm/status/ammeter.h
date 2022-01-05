@@ -25,7 +25,7 @@
 // lcd/dogm/status/ammeter.h - Status Screen Laser Ammeter bitmaps
 //
 
-#define STATUS_AMMETER_BYTEWIDTH 20
+#define STATUS_AMMETER_WIDTH 24
 
 const unsigned char status_ammeter_bmp_mA[] PROGMEM = {
   B00000000,B11111100,B00000000,
@@ -64,5 +64,5 @@ const unsigned char status_ammeter_bmp_A[] PROGMEM = {
   B00001000,B00000000,B01000000,
   B00000100,B00000000,B10000000,
   B00000011,B00000011,B00000000,
-  B00000000,B11111100,B00000000,
+  B00000000,B11111100,B00000000
 };
