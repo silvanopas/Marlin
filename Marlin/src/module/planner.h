@@ -48,6 +48,8 @@
 
 #if ENABLED(DELTA)
   #include "delta.h"
+#elif ENABLED(POLARGRAPH)
+  #include "polargraph.h"
 #endif
 
 #if ABL_PLANAR
@@ -71,6 +73,10 @@
   #define IS_PAGE(B) TEST(B->flag, BLOCK_BIT_IS_PAGE)
 #else
   #define IS_PAGE(B) false
+#endif
+
+#if ENABLED(EXTERNAL_CLOSED_LOOP_CONTROLLER)
+  #include "../feature/closedloop.h"
 #endif
 
 // Feedrate for manual moves
@@ -109,6 +115,11 @@ enum BlockFlagBit : char {
   #if ENABLED(LASER_SYNCHRONOUS_M106_M107)
     , BLOCK_BIT_SYNC_FANS
   #endif
+
+    // Sync laser power from a queued block
+  #if ENABLED(LASER_POWER_SYNC)
+    , BLOCK_BIT_LASER_PWR
+  #endif
 };
 
 enum BlockFlag : char {
@@ -122,29 +133,31 @@ enum BlockFlag : char {
   #if ENABLED(LASER_SYNCHRONOUS_M106_M107)
     , BLOCK_FLAG_SYNC_FANS          = _BV(BLOCK_BIT_SYNC_FANS)
   #endif
+  #if ENABLED(LASER_POWER_SYNC)
+    , BLOCK_FLAG_LASER_PWR          = _BV(BLOCK_BIT_LASER_PWR)
+  #endif  
 };
 
-#define BLOCK_MASK_SYNC ( BLOCK_FLAG_SYNC_POSITION | TERN0(LASER_SYNCHRONOUS_M106_M107, BLOCK_FLAG_SYNC_FANS) )
+#define BLOCK_MASK_SYNC ( BLOCK_FLAG_SYNC_POSITION | TERN0(LASER_SYNCHRONOUS_M106_M107, BLOCK_FLAG_SYNC_FANS) | TERN0(LASER_POWER_SYNC, BLOCK_FLAG_LASER_PWR ))
 
-#if ENABLED(LASER_POWER_INLINE)
+#if ENABLED(LASER_FEATURE)
 
   typedef struct {
-    bool isPlanned:1;
-    bool isEnabled:1;
+    bool isEnabled:1;                                 // Set to engage the inline laser power output.
     bool dir:1;
+    bool isPowered:1;                                 // Set on any parsed G1, G2, G3, or G5 powered move, cleared on G0 and G28.
+    bool isSyncPower:1;                               // Set on a M3 sync based set laser power, used to determine active trap power 
     bool Reserved:6;
   } power_status_t;
 
   typedef struct {
-    power_status_t status;    // See planner settings for meaning
-    uint8_t power;            // Ditto; When in trapezoid mode this is nominal power
-    #if ENABLED(LASER_POWER_INLINE_TRAPEZOID)
-      uint8_t   power_entry;  // Entry power for the laser
-      #if DISABLED(LASER_POWER_INLINE_TRAPEZOID_CONT)
-        uint8_t   power_exit; // Exit power for the laser
-        uint32_t  entry_per,  // Steps per power increment (to avoid floats in stepper calcs)
-                  exit_per;   // Steps per power decrement
-      #endif
+    power_status_t status;                            // See planner settings for meaning
+    uint8_t power;                                    // Ditto; When in trapezoid mode this is nominal power
+
+    #if ENABLED(LASER_POWER_TRAP)
+      float trap_ramp_active_pwr;                     // Laser power level during active trapezoid smoothing 
+      float trap_ramp_entry_incr;                     // Acceleration per step laser power increment (trap entry)
+      float trap_ramp_exit_decr;                      // Deceleration per step laser power decrement (trap exit)
     #endif
   } block_laser_t;
 
@@ -200,7 +213,7 @@ typedef struct block_t {
     uint32_t acceleration_rate;             // The acceleration rate used for acceleration calculation
   #endif
 
-  uint8_t direction_bits;                   // The direction bit set for this block (refers to *_DIRECTION_BIT in config.h)
+  axis_bits_t direction_bits;               // The direction bit set for this block (refers to *_DIRECTION_BIT in config.h)
 
   // Advance extrusion
   #if ENABLED(LIN_ADVANCE)
@@ -240,7 +253,7 @@ typedef struct block_t {
     uint32_t sdpos;
   #endif
 
-  #if ENABLED(LASER_POWER_INLINE)
+  #if ENABLED(LASER_FEATURE)
     block_laser_t laser;
   #endif
 
@@ -252,7 +265,7 @@ typedef struct block_t {
 
 #define BLOCK_MOD(n) ((n)&(BLOCK_BUFFER_SIZE-1))
 
-#if ENABLED(LASER_POWER_INLINE)
+#if ENABLED(LASER_FEATURE)
   typedef struct {
     /**
      * Laser status flags
@@ -265,7 +278,7 @@ typedef struct block_t {
      * Using OCR instead of raw power, because it avoids
      * floating point operations during the move loop.
      */
-    uint8_t power;
+    volatile uint8_t power;
   } laser_state_t;
 #endif
 
@@ -280,6 +293,15 @@ typedef struct {
  feedRate_t min_feedrate_mm_s,                  // (mm/s) M205 S - Minimum linear feedrate
             min_travel_feedrate_mm_s;           // (mm/s) M205 T - Minimum travel feedrate
 } planner_settings_t;
+
+#if ENABLED(IMPROVE_HOMING_RELIABILITY)
+  struct motion_state_t {
+    TERN(DELTA, xyz_ulong_t, xy_ulong_t) acceleration;
+    #if HAS_CLASSIC_JERK
+      TERN(DELTA, xyz_float_t, xy_float_t) jerk_state;
+    #endif
+  };
+#endif
 
 #if DISABLED(SKEW_CORRECTION)
   #define XY_SKEW_FACTOR 0
@@ -358,12 +380,12 @@ class Planner {
 
     static planner_settings_t settings;
 
-    #if ENABLED(LASER_POWER_INLINE)
+    #if ENABLED(LASER_FEATURE)
       static laser_state_t laser_inline;
     #endif
 
     static uint32_t max_acceleration_steps_per_s2[DISTINCT_AXES]; // (steps/s^2) Derived from mm_per_s2
-    static float steps_to_mm[DISTINCT_AXES];          // Millimeters per step
+    static float mm_per_step[DISTINCT_AXES];          // Millimeters per step
 
     #if HAS_JUNCTION_DEVIATION
       static float junction_deviation_mm;             // (mm) M205 J
@@ -478,7 +500,7 @@ class Planner {
     static void reset_acceleration_rates();
 
     /**
-     * Recalculate 'position' and 'steps_to_mm'.
+     * Recalculate 'position' and 'mm_per_step'.
      * Must be called whenever settings.axis_steps_per_mm changes!
      */
     static void refresh_positioning();
@@ -530,6 +552,10 @@ class Planner {
             : volumetric_multiplier[FILAMENT_SENSOR_EXTRUDER_NUM]
         );
       }
+    #endif
+
+    #if ENABLED(IMPROVE_HOMING_RELIABILITY)
+      void enable_stall_prevention(const bool onoff);
     #endif
 
     #if DISABLED(NO_VOLUMETRICS)
@@ -734,12 +760,12 @@ class Planner {
 
     /**
      * Planner::buffer_sync_block
-     * Add a block to the buffer that just updates the position or in
-     * case of LASER_SYNCHRONOUS_M106_M107 the fan pwm
+     * Add a block to the buffer that just updates the position
+     * @param sync_flag sets a condition bit to process additional items
+     * such as sync fan pwm or sync M3/M4 laser power into a queued block  
      */
-    static void buffer_sync_block(
-      TERN_(LASER_SYNCHRONOUS_M106_M107, uint8_t sync_flag=BLOCK_FLAG_SYNC_POSITION)
-    );
+    static void buffer_sync_block();
+    static void buffer_sync_block(uint8_t sync_flag);
 
   #if IS_KINEMATIC
     private:
@@ -844,11 +870,18 @@ class Planner {
       static void quick_resume();
     #endif
 
-    // Called when an endstop is triggered. Causes the machine to stop inmediately
+    // Called when an endstop is triggered. Causes the machine to stop immediately
     static void endstop_triggered(const AxisEnum axis);
 
     // Triggered position of an axis in mm (not core-savvy)
     static float triggered_position_mm(const AxisEnum axis);
+
+    // Blocks are queued, or we're running out moves, or the closed loop controller is waiting
+    static inline bool busy() {
+      return (has_blocks_queued() || cleaning_buffer_counter
+          || TERN0(EXTERNAL_CLOSED_LOOP_CONTROLLER, CLOSED_LOOP_WAITING())
+      );
+    }
 
     // Block until all buffered steps are executed / cleaned
     static void synchronize();
