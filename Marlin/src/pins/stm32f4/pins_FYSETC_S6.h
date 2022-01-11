@@ -338,3 +338,6 @@
 #ifndef RGB_LED_W_PIN
   #define RGB_LED_W_PIN                     -1
 #endif
+#define SPINDLE_LASER_PWM_PIN             PB3  // Hardware PWM
+#define SPINDLE_LASER_ENA_PIN             PB15  // Pullup!
+#define AIR_ASSIST_PIN                    PB4// Pullup!  
