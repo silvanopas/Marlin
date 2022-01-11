@@ -29,7 +29,7 @@ struct Timer {
   volatile uint16_t* ICRn;      // max 1 ICR register per timer
   uint8_t n;                    // the timer number [0->5]
   uint8_t q;                    // the timer output [0->2] (A->C)
-  bool isPWMpin;                // True if pin is a hardware timer.
+  bool isPWM;                   // True if pin is a "hardware timer"
   bool isProtected;             // True if timer is protected
 };
 
@@ -87,7 +87,7 @@ Timer get_pwm_timer(const pin_t pin) {
         case TIMER2A: break; // protect TIMER2A
         case TIMER2B:
           return Timer({
-            { &TCCR2A,  &TCCR2B,  nullptr },
+            { &TCCR2A, &TCCR2B, nullptr },
             { (uint16_t*)&OCR2A, (uint16_t*)&OCR2B, nullptr },
               nullptr,
               2, 1,
@@ -96,7 +96,7 @@ Timer get_pwm_timer(const pin_t pin) {
       #else
         case TIMER2B: ++q; case TIMER2A:
           return Timer({
-            { &TCCR2A,  &TCCR2B,  nullptr },
+            { &TCCR2A, &TCCR2B, nullptr },
             { (uint16_t*)&OCR2A, (uint16_t*)&OCR2B, nullptr },
               nullptr,
               2, q,
@@ -108,8 +108,8 @@ Timer get_pwm_timer(const pin_t pin) {
     #ifdef OCR3C
       case TIMER3C: ++q; case TIMER3B: ++q; case TIMER3A:
         return Timer({
-          { &TCCR3A,  &TCCR3B,  &TCCR3C },
-          { &OCR3A,   &OCR3B,   &OCR3C },
+          { &TCCR3A, &TCCR3B, &TCCR3C },
+          { &OCR3A,  &OCR3B,  &OCR3C },
             &ICR3,
             3, q,
             true, false
@@ -117,8 +117,8 @@ Timer get_pwm_timer(const pin_t pin) {
     #elif defined(OCR3B)
       case TIMER3B: ++q; case TIMER3A:
         return Timer({
-          { &TCCR3A,  &TCCR3B,  nullptr },
-          { &OCR3A,   &OCR3B,  nullptr },
+          { &TCCR3A, &TCCR3B, nullptr },
+          { &OCR3A,  &OCR3B,  nullptr },
             &ICR3,
             3, q,
             true, false
@@ -128,8 +128,8 @@ Timer get_pwm_timer(const pin_t pin) {
     #ifdef TCCR4A
       case TIMER4C: ++q; case TIMER4B: ++q; case TIMER4A:
         return Timer({
-          { &TCCR4A,  &TCCR4B,  &TCCR4C },
-          { &OCR4A,   &OCR4B,   &OCR4C },
+          { &TCCR4A, &TCCR4B, &TCCR4C },
+          { &OCR4A,  &OCR4B,  &OCR4C },
             &ICR4,
             4, q,
             true, false
@@ -139,8 +139,8 @@ Timer get_pwm_timer(const pin_t pin) {
     #ifdef TCCR5A
       case TIMER5C: ++q; case TIMER5B: ++q; case TIMER5A:
         return Timer({
-          { &TCCR5A,  &TCCR5B,  &TCCR5C },
-          { &OCR5A,   &OCR5B,   &OCR5C },
+          { &TCCR5A, &TCCR5B, &TCCR5C },
+          { &OCR5A,  &OCR5B,  &OCR5C },
             &ICR5,
             5, q,
             true, false
@@ -159,22 +159,21 @@ Timer get_pwm_timer(const pin_t pin) {
 
 void set_pwm_frequency(const pin_t pin, const uint16_t f_desired) {
   Timer timer = get_pwm_timer(pin);
-  if (timer.isProtected || !timer.isPWMpin) return; // Don't proceed if protected timer or not recognized
+  if (timer.isProtected || !timer.isPWM) return; // Don't proceed if protected timer or not recognized
 
   const bool is_timer2 = timer.n == 2;
-  const uint16_t size = is_timer2 ? 255 : 65535;
+  const uint16_t maxtop = is_timer2 ? 0xFF : 0xFFFF;
 
-  uint16_t res = 255;   // resolution (TOP value)
-  uint8_t j = 0;        // prescaler index
-  uint8_t wgm = 1;      // waveform generation mode
+  uint16_t res = 0xFF;        // resolution (TOP value)
+  uint8_t j = CS_NONE;        // prescaler index
+  uint8_t wgm = WGM_PWM_PC_8; // waveform generation mode
 
   // Calculating the prescaler and resolution to use to achieve closest frequency
   if (f_desired != 0) {
-    constexpr uint16_t prescaler[] = { 1, 8, /*TIMER2 ONLY*/32, 64, /*TIMER2 ONLY*/128, 256, 1024 };
-    uint16_t f = (F_CPU) / (2 * 1024 * size) + 1; // Initialize frequency as lowest (non-zero) achievable
+    constexpr uint16_t prescaler[] = { 1, 8, (32), 64, (128), 256, 1024 };  // (*) are Timer 2 only
+    uint16_t f = (F_CPU) / (2 * 1024 * maxtop) + 1;           // Start with the lowest non-zero frequency achievable (1 or 31)
 
-    // loop over prescaler values
-    LOOP_L_N(i, COUNT(prescaler)) {
+    LOOP_L_N(i, COUNT(prescaler)) {                           // Loop through all prescaler values
       const uint16_t p = prescaler[i];
       uint16_t res_fast_temp, res_pc_temp;
       if (is_timer2) {
@@ -183,7 +182,7 @@ void set_pwm_frequency(const pin_t pin, const uint16_t f_desired) {
           res_fast_temp = rft - 1;
           res_pc_temp = rft / 2;
         #else
-          res_fast_temp = res_pc_temp = 255;
+          res_fast_temp = res_pc_temp = maxtop;
         #endif
       }
       else {
@@ -193,33 +192,30 @@ void set_pwm_frequency(const pin_t pin, const uint16_t f_desired) {
         res_pc_temp = rft / 2;
       }
 
-      LIMIT(res_fast_temp, 1U, size);
-      LIMIT(res_pc_temp, 1U, size);
+      LIMIT(res_fast_temp, 1U, maxtop);
+      LIMIT(res_pc_temp, 1U, maxtop);
 
       // Calculate frequencies of test prescaler and resolution values
-      const uint32_t f_diff = _MAX(f, f_desired) - _MIN(f, f_desired),
+      const uint32_t f_diff      = _MAX(f, f_desired) - _MIN(f, f_desired),
                      f_fast_temp = (F_CPU) / (p * (1 + res_fast_temp)),
                      f_fast_diff = _MAX(f_fast_temp, f_desired) - _MIN(f_fast_temp, f_desired),
-                     f_pc_temp = (F_CPU) / (2 * p * res_pc_temp),
-                     f_pc_diff = _MAX(f_pc_temp, f_desired) - _MIN(f_pc_temp, f_desired);
+                     f_pc_temp   = (F_CPU) / (2 * p * res_pc_temp),
+                     f_pc_diff   = _MAX(f_pc_temp, f_desired) - _MIN(f_pc_temp, f_desired);
 
       if (f_fast_diff < f_diff && f_fast_diff <= f_pc_diff) { // FAST values are closest to desired f
-        // Remember this combination
-        f = f_fast_temp;
-        res = res_fast_temp;
-        j = i + 1;
         // Set the Wave Generation Mode to FAST PWM
         wgm = is_timer2 ? uint8_t(TERN(USE_OCR2A_AS_TOP, WGM2_FAST_PWM_OCR2A, WGM2_FAST_PWM)) : uint8_t(WGM_FAST_PWM_ICRn);
+        // Remember this combination
+        f = f_fast_temp; res = res_fast_temp; j = i + 1;
       }
       else if (f_pc_diff < f_diff) {                          // PHASE CORRECT values are closes to desired f
-        f = f_pc_temp;
-        res = res_pc_temp;
-        j = i + 1;
         // Set the Wave Generation Mode to PWM PHASE CORRECT
         wgm = is_timer2 ? uint8_t(TERN(USE_OCR2A_AS_TOP, WGM2_PWM_PC_OCR2A, WGM2_PWM_PC)) : uint8_t(WGM_PWM_PC_ICRn);
+        f = f_pc_temp; res = res_pc_temp; j = i + 1;
       }
     }
   }
+
   _SET_WGMnQ(timer.TCCRnQ, wgm);
   _SET_CSn(timer.TCCRnQ, j);
 
@@ -239,8 +235,8 @@ void set_pwm_duty(const pin_t pin, const uint16_t v, const uint16_t v_size/*=255
     digitalWrite(pin, !invert);
   else {
     Timer timer = get_pwm_timer(pin);
-    if (timer.isProtected) return;              // Don't proceed if protected timer
-    if (timer.isPWMpin) {
+    if (timer.isProtected) return;                            // Leave protected timer unchanged
+    if (timer.isPWM) {
       _SET_COMnQ(timer.TCCRnQ, SUM_TERN(HAS_TCCR2, timer.q, timer.q == 2), COM_CLEAR_SET + invert);   // COM20 is on bit 4 of TCCR2, so +1 for q==2
       const uint16_t top = timer.n == 2 ? TERN(USE_OCR2A_AS_TOP, *timer.OCRnQ[0], 255) : *timer.ICRn;
       _SET_OCRnQ(timer.OCRnQ, timer.q, uint16_t(uint32_t(v) * top / v_size)); // Scale 8/16-bit v to top value
@@ -251,7 +247,7 @@ void set_pwm_duty(const pin_t pin, const uint16_t v, const uint16_t v_size/*=255
 }
 
 void init_pwm_timers() {
-  // Init some timer frequencies to a default 1KHZ
+  // Init some timer frequencies to a default 1KHz
   const pin_t pwm_pin[] = {
     #ifdef __AVR_ATmega2560__
       10, 5, 6, 46
